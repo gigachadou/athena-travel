@@ -52,6 +52,23 @@
   scroll-behavior: smooth;
 }
 
+.ai-status-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 18px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.75);
+  color: var(--text-dark);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--shadow-sm);
+}
+
+.ai-status-card.warning {
+  border-color: rgba(245, 158, 11, 0.4);
+  background: rgba(255, 248, 235, 0.92);
+}
+
 .suggested-questions {
     display: flex;
     flex-wrap: wrap;
@@ -116,6 +133,11 @@
   line-height: 1.6;
   box-shadow: var(--shadow-sm);
   position: relative;
+}
+
+.message-text {
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 
 .ai-msg {
@@ -201,6 +223,11 @@
   color: var(--accent-gold);
   border-color: var(--accent-gold);
   animation: pulse 1.5s infinite;
+}
+
+.btn-mic:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .input-group {
