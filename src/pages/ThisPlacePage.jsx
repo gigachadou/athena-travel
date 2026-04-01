@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useParams, useNavigate } from 'react-router-dom'
-import { Star, Heart, Share2, MapPin, ArrowLeft, Send, ExternalLink, History, Landmark, Utensils, Hotel, Trees, Info, Plane, Train, Bus, Sparkles, Smile } from 'lucide-react'
+import { Star, Heart, MapPin, ArrowLeft, Send, History, Landmark, Utensils, Hotel, Trees, Info, Plane, Train, Bus, Sparkles, Smile } from 'lucide-react'
 import Loading from '../components/Loading'
 import BookingTicket from '../components/BookingTicket'
-import { fetchWikipediaSummary, fetchPlacesFromOTM } from '../utils/api'
-import { addComment, addFavorite, fetchCommentsByPlaceId, fetchIsFavorite, fetchPlaceById, removeFavorite } from '../services/databaseService'
+import { fetchPlacesFromOTM } from '../utils/api'
+import { addComment, addFavorite, fetchCommentsByPlaceId, fetchIsFavorite, fetchPlaceAiText, fetchPlaceById, removeFavorite } from '../services/databaseService'
 import '../styles/ThisPlacePage.css'
 import { useAuth } from '../context/AuthContext'
 
@@ -41,9 +41,13 @@ const ThisPlacePage = () => {
     const loadData = async () => {
       setLoading(true)
       try {
-        const [place, placeComments] = await Promise.all([
+        const [place, placeComments, aiText] = await Promise.all([
           fetchPlaceById(id),
           fetchCommentsByPlaceId(id),
+          fetchPlaceAiText(id, i18n.language).catch((error) => {
+            console.error('Failed to load AI texts:', error)
+            return null
+          }),
         ])
 
         setComments(placeComments)
@@ -51,7 +55,8 @@ const ThisPlacePage = () => {
         if (place) {
           setPlaceData({
             title: place.title,
-            extract: place.description,
+            extract: aiText?.summary || place.description,
+            copy: aiText,
             meta: place,
           })
           setGalleryImages([
@@ -66,17 +71,6 @@ const ThisPlacePage = () => {
           } else {
             setIsLiked(false)
           }
-        }
-
-        const placeName = place ? place.title : 'Surkhandarya'
-        const lang = i18n.language === 'uz' ? 'uz' : 'en'
-        const wikiData = await fetchWikipediaSummary(placeName, lang)
-        if (wikiData) {
-          setPlaceData(prev => ({
-            ...prev,
-            extract: wikiData.extract || prev?.extract,
-            link: wikiData.link,
-          }))
         }
 
         const coords = place ? { lat: place.lat, lon: place.lon } : { lat: 37.22, lon: 67.27 }
@@ -180,6 +174,8 @@ const ThisPlacePage = () => {
     return <Loading fullPage message={t('loading')} />
   }
 
+  const copy = placeData?.copy || {}
+
   if (!placeData) {
     return (
       <div className="flex-center" style={{ height: '80vh', textAlign: 'center', padding: '20px' }}>
@@ -220,7 +216,7 @@ const ThisPlacePage = () => {
           <div className="title-left">
             <div className="category-tag-premium glass-full">
               <Sparkles size={12} color="var(--accent-gold)" />
-              {t('must_visit', 'Borish Shart!')}
+              {copy.mustVisitLabel || t('must_visit', 'Borish Shart!')}
             </div>
             <h1>{placeData.title}</h1>
           </div>
@@ -232,13 +228,13 @@ const ThisPlacePage = () => {
 
         <div className="location-row">
           <MapPin size={18} color="var(--accent-gold)" />
-          <span>{placeData.meta?.location || placeData.description || t('location')}</span>
+          <span>{placeData.meta?.location || placeData.extract || t('location')}</span>
         </div>
 
         <section className="accessibility-section animate-up">
           <div className="section-title">
             <Info size={20} color="var(--accent-gold)" />
-            <h3>{t('location_info', 'Joylashuv ma\'lumotlari')}</h3>
+            <h3>{copy.locationInfoTitle || t('location_info', 'Joylashuv ma\'lumotlari')}</h3>
           </div>
           <div className="access-grid-premium">
             <div className="access-card-premium glass-full">
@@ -280,7 +276,7 @@ const ThisPlacePage = () => {
                 <span>{t('total_price', 'Umumiy narx')}:</span>
                 <span className="price-val-gold large">{placeData.meta?.price}</span>
               </div>
-              <p className="price-note">* Narxlar bir kecha uchun ko'rsatilgan</p>
+              <p className="price-note">{copy.pricingNote || "* Narxlar bir kecha uchun ko'rsatilgan"}</p>
             </div>
           </section>
         )}
@@ -288,15 +284,10 @@ const ThisPlacePage = () => {
         <section className="info-section animate-up">
           <div className="section-title">
             <History size={20} color="var(--accent-gold)" />
-            <h3>{t('historical_info')}</h3>
+            <h3>{copy.historicalInfoTitle || t('historical_info')}</h3>
           </div>
           <div className="wiki-card-premium glass-full">
             <p className="description">{placeData.extract}</p>
-            {placeData.link && (
-              <a href={placeData.link} target="_blank" rel="noopener noreferrer" className="wiki-link-gold">
-                {t('view_all')} <ExternalLink size={14} />
-              </a>
-            )}
           </div>
         </section>
 
@@ -344,8 +335,8 @@ const ThisPlacePage = () => {
           <h3>Fikrlar <span className="comment-count">({comments.length})</span></h3>
           <div className="comment-composer glass-full">
             <div className="rating-text">
-              <h4>Baholang va fikr qoldiring</h4>
-              <p>Reyting va izoh birga yuboriladi.</p>
+              <h4>{copy.reviewTitle || 'Baholang va fikr qoldiring'}</h4>
+              <p>{copy.reviewSubtitle || 'Reyting va izoh birga yuboriladi.'}</p>
             </div>
             <form className="comment-form" onSubmit={handleAddComment}>
               <div className="interactive-stars comment-stars">
@@ -368,7 +359,9 @@ const ThisPlacePage = () => {
               </div>
               <div className="comment-input-row">
                 <textarea
-                  placeholder={currentUser ? 'Fikringizni yozing...' : 'Fikr yozish uchun avval tizimga kiring'}
+                  placeholder={currentUser
+                    ? (copy.commentPlaceholderAuth || 'Fikringizni yozing...')
+                    : (copy.commentPlaceholderGuest || 'Fikr yozish uchun avval tizimga kiring')}
                   value={comment}
                   onChange={(e) => setComment(e.target.value)}
                   disabled={!currentUser}
@@ -381,10 +374,10 @@ const ThisPlacePage = () => {
             </form>
             {!currentUser && (
               <button className="btn-primary login-to-comment" onClick={() => navigate('/login')}>
-                Kirish va fikr yozish
+                {copy.loginToCommentLabel || 'Kirish va fikr yozish'}
               </button>
             )}
-            {showSparkles && <div className="rating-success animate-pop"><Sparkles size={18} /> Reyting tanlandi</div>}
+            {showSparkles && <div className="rating-success animate-pop"><Sparkles size={18} /> {copy.ratingSelectedMessage || 'Reyting tanlandi'}</div>}
           </div>
           {commentError && <p style={{ color: '#d14343', marginTop: '10px' }}>{commentError}</p>}
           <div className="comments-list">
