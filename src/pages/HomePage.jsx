@@ -8,7 +8,7 @@ import { Sparkles, MapPin, Navigation } from 'lucide-react'
 import { useGeolocation } from '../hooks/useGeolocation'
 import Loading from '../components/Loading'
 import { fetchPlaces } from '../services/databaseService'
-import { filterPlaces } from '../utils/placeFilters'
+import { createDefaultFilters, deriveFilterOptions, filterPlaces } from '../utils/placeFilters'
 
 const HomePage = () => {
   const { t } = useTranslation()
@@ -17,15 +17,7 @@ const HomePage = () => {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [searchTerm, setSearchTerm] = useState('')
-  const [filters, setFilters] = useState({
-    region: '',
-    priceRange: 10000000,
-    rating: 0,
-    categories: [],
-    bestSeason: '',
-    difficulty: '',
-    amenities: []
-  })
+  const [filters, setFilters] = useState(createDefaultFilters())
 
   const handleFilterChange = (newFilters) => {
     setFilters(prev => ({ ...prev, ...newFilters }))
@@ -39,6 +31,7 @@ const HomePage = () => {
       try {
         const data = await fetchPlaces()
         setPlaces(data)
+        setFilters(createDefaultFilters(Math.max(...data.map((place) => place.priceValue), 0)))
       } catch (err) {
         console.error('Failed to load places:', err)
         setError("Joylarni yuklab bo'lmadi.")
@@ -51,6 +44,8 @@ const HomePage = () => {
   }, [])
 
   const filteredPosts = filterPlaces(places, searchTerm, filters)
+  const filterOptions = deriveFilterOptions(places)
+  const defaultFilters = createDefaultFilters(filterOptions.maxPrice)
 
   if (loading) {
     return <Loading fullPage message={t('loading')} />
@@ -75,7 +70,12 @@ const HomePage = () => {
         </section>
 
         <div className="home-layout-wrapper">
-          <SidebarFilter filters={filters} onFilterChange={handleFilterChange} />
+          <SidebarFilter
+            filters={filters}
+            onFilterChange={handleFilterChange}
+            options={filterOptions}
+            defaultFilters={defaultFilters}
+          />
           
           <main className="main-content">
             <section className="posts-section animate-up">

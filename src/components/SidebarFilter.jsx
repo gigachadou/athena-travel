@@ -2,15 +2,23 @@ import { Filter, Star, MapPin, Trash2, Mountain, Landmark, Hotel, Utensils, Coin
 import { useTranslation } from 'react-i18next'
 import './SidebarFilter.css'
 
-const SidebarFilter = ({ filters, onFilterChange }) => {
-  const { t } = useTranslation()
+const ICON_MAP = {
+  mountain: Mountain,
+  landmark: Landmark,
+  hotel: Hotel,
+  utensils: Utensils,
+  sun: Sun,
+  snowflake: Snowflake,
+  leaf: Leaf,
+  thermometer: Thermometer,
+  wifi: Wifi,
+  car: Car,
+  compass: Compass,
+  filter: Filter,
+}
 
-  const CATEGORY_ICONS = {
-    'Mountains': <Mountain size={16} />,
-    'Historical': <Landmark size={16} />,
-    'Hotels': <Hotel size={16} />,
-    'Restaurants': <Utensils size={16} />
-  }
+const SidebarFilter = ({ filters, onFilterChange, options, defaultFilters }) => {
+  const { t } = useTranslation()
 
   const handleCategoryToggle = (category) => {
     const newCategories = filters.categories.includes(category)
@@ -39,22 +47,7 @@ const SidebarFilter = ({ filters, onFilterChange }) => {
   }
 
   const resetFilters = () => {
-    onFilterChange({
-      region: '',
-      priceRange: 10000000,
-      rating: 0,
-      categories: [],
-      bestSeason: '',
-      difficulty: '',
-      amenities: []
-    })
-  }
-
-  const SEASON_ICONS = {
-    'Spring': <Leaf size={16} color="#4ADE80" />,
-    'Summer': <Sun size={16} color="#FBBF24" />,
-    'Autumn': <Thermometer size={16} color="#FB923C" />,
-    'Winter': <Snowflake size={16} color="#60A5FA" />
+    onFilterChange(defaultFilters)
   }
 
   return (
@@ -78,12 +71,9 @@ const SidebarFilter = ({ filters, onFilterChange }) => {
         <div className="filter-input-wrapper">
             <select value={filters.region} onChange={handleRegionChange}>
                 <option value="">{t('select_region', 'Barcha hududlar')}</option>
-                <option value="tashkent">Toshkent</option>
-                <option value="samarkand">Samarqand</option>
-                <option value="bukhara">Buxoro</option>
-                <option value="khiva">Xiva</option>
-                <option value="jizzakh">Jizzax</option>
-                <option value="karakalpakstan">Qoraqalpog'iston</option>
+                {options.regions.map((region) => (
+                  <option key={region.value} value={region.value}>{region.label}</option>
+                ))}
             </select>
             <ChevronDown size={18} className="select-arrow" />
         </div>
@@ -100,8 +90,8 @@ const SidebarFilter = ({ filters, onFilterChange }) => {
         <input 
             type="range" 
             min="0" 
-            max="10000000" 
-            step="100000" 
+            max={Math.max(options.maxPrice, 0)}
+            step={Math.max(Math.ceil(options.maxPrice / 20 / 1000) * 1000, 1000)}
             className="price-slider-red" 
             value={filters.priceRange}
             onChange={handlePriceChange}
@@ -132,24 +122,21 @@ const SidebarFilter = ({ filters, onFilterChange }) => {
             {t('categories', 'Kategoriyalar')}
         </label>
         <div className="checkbox-list">
-            {[
-                { id: 'Mountains', label: 'Tog\'lar' },
-                { id: 'Historical', label: 'Tarixiy' },
-                { id: 'Hotels', label: 'Mehmonxonalar' },
-                { id: 'Restaurants', label: 'Restoranlar' }
-            ].map((cat) => (
-                <label key={cat.id} className="checkbox-item-premium">
+            {options.categories.map((cat) => {
+                const Icon = ICON_MAP[cat.icon] || Filter
+                return (
+                <label key={cat.value} className="checkbox-item-premium">
                     <input 
                         type="checkbox" 
-                        checked={filters.categories.includes(cat.id)}
-                        onChange={() => handleCategoryToggle(cat.id)}
+                        checked={filters.categories.includes(cat.value)}
+                        onChange={() => handleCategoryToggle(cat.value)}
                     />
-                    <div className={`check-card glass ${filters.categories.includes(cat.id) ? 'active' : ''}`}>
-                        {CATEGORY_ICONS[cat.id]}
+                    <div className={`check-card glass ${filters.categories.includes(cat.value) ? 'active' : ''}`}>
+                        <Icon size={16} />
                         <span className="label-text">{cat.label}</span>
                     </div>
                 </label>
-            ))}
+            )})}
         </div>
       </div>
       
@@ -159,21 +146,18 @@ const SidebarFilter = ({ filters, onFilterChange }) => {
             {t('best_season', 'Eng yaxshi fasl')}
         </label>
         <div className="season-options">
-            {[
-                { id: 'Spring', label: 'Bahor' },
-                { id: 'Summer', label: 'Yoz' },
-                { id: 'Autumn', label: 'Kuz' },
-                { id: 'Winter', label: 'Qish' }
-            ].map((season) => (
+            {options.seasons.map((season) => {
+                const Icon = ICON_MAP[season.icon] || Compass
+                return (
                 <button 
-                    key={season.id} 
-                    className={`season-btn ${filters.bestSeason === season.id ? 'active' : ''}`}
-                    onClick={() => onFilterChange({ bestSeason: filters.bestSeason === season.id ? '' : season.id })}
+                    key={season.value} 
+                    className={`season-btn ${filters.bestSeason === season.value ? 'active' : ''}`}
+                    onClick={() => onFilterChange({ bestSeason: filters.bestSeason === season.value ? '' : season.value })}
                 >
-                    {SEASON_ICONS[season.id]}
+                    <Icon size={16} />
                     <span>{season.label}</span>
                 </button>
-            ))}
+            )})}
         </div>
       </div>
 
@@ -183,15 +167,11 @@ const SidebarFilter = ({ filters, onFilterChange }) => {
             {t('difficulty', 'Qiyinchilik')}
         </label>
         <div className="difficulty-wrapper">
-            {[
-                { id: 'Easy', label: 'Oson' },
-                { id: 'Medium', label: 'O\'rtacha' },
-                { id: 'Hard', label: 'Qiyin' }
-            ].map((diff) => (
+            {options.difficulties.map((diff) => (
                 <button 
-                    key={diff.id} 
-                    className={`diff-btn ${filters.difficulty === diff.id ? 'active' : ''}`}
-                    onClick={() => onFilterChange({ difficulty: filters.difficulty === diff.id ? '' : diff.id })}
+                    key={diff.value} 
+                    className={`diff-btn ${filters.difficulty === diff.value ? 'active' : ''}`}
+                    onClick={() => onFilterChange({ difficulty: filters.difficulty === diff.value ? '' : diff.value })}
                 >
                     {diff.label}
                 </button>
@@ -205,21 +185,25 @@ const SidebarFilter = ({ filters, onFilterChange }) => {
             {t('amenities', 'Qulayliklar')}
         </label>
         <div className="amenities-grid">
-            {[
-                { id: 'WiFi', label: 'Wi-Fi', icon: <Wifi size={14} /> },
-                { id: 'Parking', label: 'Turargoh', icon: <Car size={14} /> },
-                { id: 'Food', label: 'Taomlar', icon: <Utensils size={14} /> },
-                { id: 'Guide', label: 'Gid', icon: <Compass size={14} /> }
-            ].map((item) => (
+            {options.amenities.map((item) => {
+                const iconKey = item.value.toLowerCase().includes('wifi')
+                  ? 'wifi'
+                  : item.value.toLowerCase().includes('parking')
+                    ? 'car'
+                    : item.value.toLowerCase().includes('food') || item.value.toLowerCase().includes('breakfast') || item.value.toLowerCase().includes('fish')
+                      ? 'utensils'
+                      : 'compass'
+                const Icon = ICON_MAP[iconKey] || Compass
+                return (
                 <button 
-                    key={item.id} 
-                    className={`amenity-chip ${filters.amenities.includes(item.id) ? 'active' : ''}`}
-                    onClick={() => handleAmenityToggle(item.id)}
+                    key={item.value} 
+                    className={`amenity-chip ${filters.amenities.includes(item.value) ? 'active' : ''}`}
+                    onClick={() => handleAmenityToggle(item.value)}
                 >
-                    {item.icon}
+                    <Icon size={14} />
                     <span>{item.label}</span>
                 </button>
-            ))}
+            )})}
         </div>
       </div>
     </aside>

@@ -202,16 +202,16 @@ const ThisPlacePage = () => {
             <Heart size={24} fill={isLiked ? '#ff4757' : 'none'} />
           </button>
           <button className="book-btn btn-accent" onClick={handleBookingClick}>
-          {t('book_now', 'Hozir band qilish')}
-        </button>
+            {t('book_now', 'Hozir band qilish')}
+          </button>
         </div>
       </div>
 
       <div className="image-gallery-container no-scrollbar">
         {galleryImages.map((img, idx) => (
-            <div key={idx} className="gallery-item">
-                <img src={img} alt={`Gallery ${idx}`} />
-            </div>
+          <div key={idx} className="gallery-item">
+            <img src={img} alt={`Gallery ${idx}`} />
+          </div>
         ))}
       </div>
 
@@ -219,8 +219,8 @@ const ThisPlacePage = () => {
         <div className="title-row">
           <div className="title-left">
             <div className="category-tag-premium glass-full">
-                <Sparkles size={12} color="var(--accent-gold)" />
-                {t('must_visit', 'Borish Shart!')}
+              <Sparkles size={12} color="var(--accent-gold)" />
+              {t('must_visit', 'Borish Shart!')}
             </div>
             <h1>{placeData.title}</h1>
           </div>
@@ -229,60 +229,60 @@ const ThisPlacePage = () => {
             <span>{placeData.meta?.rating?.toFixed(1) || '0.0'}</span>
           </div>
         </div>
-        
+
         <div className="location-row">
           <MapPin size={18} color="var(--accent-gold)" />
           <span>{placeData.meta?.location || placeData.description || t('location')}</span>
         </div>
 
         <section className="accessibility-section animate-up">
-            <div className="section-title">
-                <Info size={20} color="var(--accent-gold)" />
-                <h3>{t('location_info', 'Joylashuv ma\'lumotlari')}</h3>
+          <div className="section-title">
+            <Info size={20} color="var(--accent-gold)" />
+            <h3>{t('location_info', 'Joylashuv ma\'lumotlari')}</h3>
+          </div>
+          <div className="access-grid-premium">
+            <div className="access-card-premium glass-full">
+              <div className="icon-wrap-gold"><Plane size={24} /></div>
+              <div className="access-info">
+                <label>{t('airport', 'Aeroport')}: </label>
+                <span>{placeData.meta?.airportDist || 'N/A'}</span>
+              </div>
             </div>
-            <div className="access-grid-premium">
-                <div className="access-card-premium glass-full">
-                    <div className="icon-wrap-gold"><Plane size={24} /></div>
-                    <div className="access-info">
-                        <label>{t('airport', 'Aeroport')}</label>
-                        <span>{placeData.meta?.airportDist || 'N/A'}</span>
-                    </div>
-                </div>
-                <div className="access-card-premium glass-full">
-                    <div className="icon-wrap-gold"><Train size={24} /></div>
-                    <div className="access-info">
-                        <label>{t('train', 'Poyezd')}</label>
-                        <span>{placeData.meta?.metroDist || 'N/A'}</span>
-                    </div>
-                </div>
-                <div className="access-card-premium glass-full">
-                    <div className="icon-wrap-gold"><Bus size={24} /></div>
-                    <div className="access-info">
-                        <label>{t('bus', 'Avtobus')}</label>
-                        <span>{placeData.meta?.busDist || 'N/A'}</span>
-                    </div>
-                </div>
+            <div className="access-card-premium glass-full">
+              <div className="icon-wrap-gold"><Train size={24} /></div>
+              <div className="access-info">
+                <label>{t('train', 'Poyezd')}: </label>
+                <span>{placeData.meta?.metroDist || 'N/A'}</span>
+              </div>
             </div>
+            <div className="access-card-premium glass-full">
+              <div className="icon-wrap-gold"><Bus size={24} /></div>
+              <div className="access-info">
+                <label>{t('bus', 'Avtobus')}: </label>
+                <span>{placeData.meta?.busDist || 'N/A'}</span>
+              </div>
+            </div>
+          </div>
         </section>
 
         {placeData.meta?.type === 'hotels' && (
-            <section className="pricing-section animate-up">
-                <div className="section-title">
-                    <Hotel size={20} color="var(--accent-gold)" />
-                    <h3>{t('pricing', 'Narxlar')}</h3>
-                </div>
-                <div className="price-detail-card-premium glass-full">
-                    <div className="price-row">
-                        <span>{t('per_person', 'Kishi boshiga')}:</span>
-                        <span className="price-val-gold">{placeData.meta?.pricePerPerson}</span>
-                    </div>
-                    <div className="price-row total">
-                        <span>{t('total_price', 'Umumiy narx')}:</span>
-                        <span className="price-val-gold large">{placeData.meta?.price}</span>
-                    </div>
-                    <p className="price-note">* Narxlar bir kecha uchun ko'rsatilgan</p>
-                </div>
-            </section>
+          <section className="pricing-section animate-up">
+            <div className="section-title">
+              <Hotel size={20} color="var(--accent-gold)" />
+              <h3>{t('pricing', 'Narxlar')}</h3>
+            </div>
+            <div className="price-detail-card-premium glass-full">
+              <div className="price-row">
+                <span>{t('per_person', 'Kishi boshiga')}:</span>
+                <span className="price-val-gold">{placeData.meta?.pricePerPerson}</span>
+              </div>
+              <div className="price-row total">
+                <span>{t('total_price', 'Umumiy narx')}:</span>
+                <span className="price-val-gold large">{placeData.meta?.price}</span>
+              </div>
+              <p className="price-note">* Narxlar bir kecha uchun ko'rsatilgan</p>
+            </div>
+          </section>
         )}
 
         <section className="info-section animate-up">
@@ -305,11 +305,11 @@ const ThisPlacePage = () => {
             <MapPin size={20} color="var(--accent-gold)" />
             <h3>{t('nearby_places')}</h3>
           </div>
-          
+
           <div className="category-filter no-scrollbar">
             {CATEGORIES.map(cat => (
-              <button 
-                key={cat.id} 
+              <button
+                key={cat.id}
                 className={`filter-tab ${activeCategory === cat.id ? 'active' : ''}`}
                 onClick={() => setActiveCategory(cat.id)}
               >
@@ -397,7 +397,7 @@ const ThisPlacePage = () => {
                   </div>
                   <div className="comment-meta">
                     <div className="mini-rating">
-                        {[...Array(c.rating)].map((_, i) => <Star key={i} size={10} fill="var(--accent-gold)" stroke="var(--accent-gold)" />)}
+                      {[...Array(c.rating)].map((_, i) => <Star key={i} size={10} fill="var(--accent-gold)" stroke="var(--accent-gold)" />)}
                     </div>
                     <span>{formatCommentDate(c.date)}</span>
                   </div>
@@ -408,7 +408,7 @@ const ThisPlacePage = () => {
           </div>
         </section>
       </div>
-      
+
       <style>{`
         .place-details-page {
             max-width: 900px;
@@ -646,9 +646,9 @@ const ThisPlacePage = () => {
         }
       `}</style>
       {showTicket && (
-        <BookingTicket 
-          place={placeData.meta} 
-          onClose={() => setShowTicket(false)} 
+        <BookingTicket
+          place={placeData.meta}
+          onClose={() => setShowTicket(false)}
         />
       )}
     </div>
