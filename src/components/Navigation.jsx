@@ -26,11 +26,13 @@ export const Header = () => {
           <Link to="/search" className={`action-btn ${location.pathname === '/search' ? 'active' : ''}`}>
             <Search size={22} color="var(--text-dark)" />
           </Link>
-          <Link to="/ai" className="btn-ai-header">
-            <div className="ai-pulse"></div>
-            <Bot size={20} color="#0f172a" />
-            <span className="hide-mobile" style={{ color: '#0f172a' }}>{t('ai_chat')}</span>
-          </Link>
+          {location.pathname !== '/ai' && (
+            <Link to="/ai" className="btn-ai-header">
+              <div className="ai-pulse"></div>
+              <Bot size={20} color="#0f172a" />
+              <span className="hide-mobile" style={{ color: '#0f172a' }}>{t('ai_chat')}</span>
+            </Link>
+          )}
         </div>
       </div>
     </header>

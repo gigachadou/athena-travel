@@ -162,15 +162,17 @@ const AIPage = () => {
     recognitionRef.current.start();
   };
 
+  // Suggested chip handler — hoisted here for clarity
+  const handleSuggestedClick = (question) => {
+    if (!isLoading) handleSendRequest(question);
+  };
+
+  const MAX_CHARS = 1000;
+  const charsLeft = MAX_CHARS - input.length;
+  const isNearLimit = charsLeft < 100;
+
   return (
     <div className="ai-page fade-in">
-      <div className="ai-header animate-up">
-        <div className="sparkle-container">
-          <Sparkles className="sparkle-icon" size={28} />
-        </div>
-        <h1>{t('ai_assistant', 'AI Assistant')}</h1>
-        <p>{t('ask_about_uzb', "O'zbekiston bo'ylab sayohat haqida so'rang")}</p>
-      </div>
 
       {!hasGeminiApiKey && (
         <div className="ai-status-card warning animate-up">
@@ -205,7 +207,7 @@ const AIPage = () => {
             <div className="message-icon glass">
               {message.sender === 'ai' ? <Bot size={18} /> : <User size={18} />}
             </div>
-            <div className={`message-bubble ${message.sender === 'user' ? 'user-msg' : 'ai-msg'} glass`}>
+            <div className={`message-bubble ${message.sender === 'user' ? 'user-msg' : 'ai-msg glass'}`}>
               <div className="message-text">{message.text}</div>
             </div>
           </div>
@@ -234,6 +236,7 @@ const AIPage = () => {
         <div ref={chatEndRef} />
       </div>
 
+      {/* ── Floating Chat Input ──────────────────────────────────────── */}
       <div className="chat-controls glass animate-up">
         <form
           className="chat-input-form"
@@ -247,36 +250,45 @@ const AIPage = () => {
             className={`btn-mic ${isListening ? 'active' : ''}`}
             onClick={toggleListening}
             disabled={!voiceSupported || isLoading}
+            title={isListening ? "Tinglashni to'xtatish" : 'Ovozli kiritish'}
           >
-            {isListening ? <Loader2 className="animate-spin" /> : <Mic size={22} />}
+            {isListening ? <Loader2 className="animate-spin" size={20} /> : <Mic size={20} />}
           </button>
 
-          <div className="input-group glass">
-            <input
-              type="text"
-              placeholder={
-                isLoading
-                  ? "AI o'ylamoqda..."
-                  : isListening
-                    ? 'Eshityapman...'
-                    : t('search_placeholder', "Savolingizni yozing...")
+          <input
+            className="chat-input"
+            type="text"
+            placeholder={
+              isLoading
+                ? "AI o'ylamoqda..."
+                : isListening
+                  ? 'Eshityapman...'
+                  : t('search_placeholder', 'Savolingizni yozing...')
+            }
+            value={input}
+            maxLength={MAX_CHARS}
+            onChange={(event) => setInput(event.target.value)}
+            onKeyDown={(event) => {
+              if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') {
+                event.preventDefault();
+                handleSendRequest(input);
               }
-              value={input}
-              onChange={(event) => setInput(event.target.value)}
-              disabled={isListening || isLoading}
-            />
-            <button type="submit" className="btn-send-ai" disabled={!input.trim() || isLoading}>
-              {isLoading ? <Loader2 className="animate-spin" size={20} /> : <Send size={20} />}
-            </button>
-          </div>
+            }}
+            disabled={isListening || isLoading}
+          />
+
+          <button
+            type="submit"
+            className="btn-send-ai"
+            disabled={!input.trim() || isLoading}
+            title="Yuborish (Ctrl+Enter)"
+          >
+            {isLoading ? <Loader2 className="animate-spin" size={18} /> : <Send size={18} />}
+          </button>
         </form>
       </div>
     </div>
   );
-
-  function handleSuggestedClick(question) {
-    handleSendRequest(question);
-  }
 };
 
 export default AIPage;
