@@ -6,7 +6,7 @@ import SidebarFilter from '../components/SidebarFilter'
 import '../styles/SearchPage.css'
 import Loading from '../components/Loading'
 import { fetchPlaces } from '../services/databaseService'
-import { filterPlaces } from '../utils/placeFilters'
+import { createDefaultFilters, deriveFilterOptions, filterPlaces, hasActiveFilters } from '../utils/placeFilters'
 
 const SearchPage = () => {
   const [query, setQuery] = useState('')
@@ -14,15 +14,7 @@ const SearchPage = () => {
   const [places, setPlaces] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
-  const [filters, setFilters] = useState({
-    region: '',
-    priceRange: 10000000,
-    rating: 0,
-    categories: [],
-    bestSeason: '',
-    difficulty: '',
-    amenities: []
-  })
+  const [filters, setFilters] = useState(createDefaultFilters())
   const { t } = useTranslation()
 
   const handleFilterChange = (newFilters) => {
@@ -37,6 +29,7 @@ const SearchPage = () => {
       try {
         const data = await fetchPlaces()
         setPlaces(data)
+        setFilters(createDefaultFilters(Math.max(...data.map((place) => place.priceValue), 0)))
       } catch (err) {
         console.error('Failed to load places:', err)
         setError("Joylarni yuklab bo'lmadi.")
@@ -49,6 +42,8 @@ const SearchPage = () => {
   }, [])
 
   const filteredPosts = filterPlaces(places, query, filters)
+  const filterOptions = deriveFilterOptions(places)
+  const defaultFilters = createDefaultFilters(filterOptions.maxPrice)
 
   if (loading) {
     return <Loading fullPage message={t('loading')} />
@@ -72,7 +67,7 @@ const SearchPage = () => {
           onClick={() => setIsFilterOpen(true)}
         >
           <Filter size={20} />
-          {Object.values(filters).some(v => Array.isArray(v) ? v.length > 0 : v !== '' && v !== 10000000 && v !== 0) && (
+          {hasActiveFilters(filters, defaultFilters) && (
             <span className="filter-badge"></span>
           )}
         </button>
@@ -88,7 +83,12 @@ const SearchPage = () => {
                   </button>
               </div>
               <div className="drawer-body">
-                <SidebarFilter filters={filters} onFilterChange={handleFilterChange} />
+                <SidebarFilter
+                  filters={filters}
+                  onFilterChange={handleFilterChange}
+                  options={filterOptions}
+                  defaultFilters={defaultFilters}
+                />
               </div>
               <div className="drawer-footer">
                   <button className="btn-apply-filters btn-accent" onClick={() => setIsFilterOpen(false)}>
