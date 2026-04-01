@@ -92,6 +92,45 @@ export const fetchPlaceAiText = async (placeId, locale = 'uz') => {
   return normalizePlaceAiText(exactMatch || data[0])
 }
 
+export const fetchPlacesForAI = async (locale = 'uz') => {
+  const preferredLocale = locale === 'uz' ? 'uz' : 'en'
+  const fallbackLocales = preferredLocale === 'uz' ? ['uz', 'en'] : ['en', 'uz']
+
+  const [{ data: places, error: placesError }, { data: aiTexts, error: aiTextsError }] = await Promise.all([
+    supabase
+      .from('places')
+      .select('*')
+      .order('created_at', { ascending: false }),
+    supabase
+      .from('place_ai_texts')
+      .select('*')
+      .in('locale', fallbackLocales),
+  ])
+
+  if (placesError) throw placesError
+  if (aiTextsError) throw aiTextsError
+
+  const aiTextsByPlaceId = new Map()
+
+  for (const row of aiTexts || []) {
+    const existing = aiTextsByPlaceId.get(row.place_id)
+    if (!existing || row.locale === preferredLocale) {
+      aiTextsByPlaceId.set(row.place_id, row)
+    }
+  }
+
+  return (places || []).map((placeRow) => {
+    const place = normalizePlace(placeRow)
+    const aiText = normalizePlaceAiText(aiTextsByPlaceId.get(place.id))
+
+    return {
+      ...place,
+      aiText,
+      aiSummary: aiText?.summary || place.description || '',
+    }
+  })
+}
+
 export const fetchCommentsByPlaceId = async (placeId) => {
   const { data, error } = await supabase
     .from('comments')
