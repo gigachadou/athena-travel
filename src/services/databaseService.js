@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase'
+import { SURKHANDARYA_POSTS } from '../data/posts'
 
 const FALLBACK_IMAGE =
   'https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=1200'
@@ -55,24 +56,45 @@ export const normalizePlaceAiText = (row) => {
 }
 
 export const fetchPlaces = async () => {
-  const { data, error } = await supabase
-    .from('places')
-    .select('*')
-    .order('created_at', { ascending: false })
+  try {
+    const { data, error } = await supabase
+      .from('places')
+      .select('*')
+      .order('created_at', { ascending: false })
 
-  if (error) throw error
-  return (data || []).map(normalizePlace)
+    if (error) throw error
+    return (data || []).map(normalizePlace)
+  } catch (err) {
+    console.warn("Supabase fetch xatosi, mock data ishlatilmoqda:", err.message)
+    return SURKHANDARYA_POSTS.map(post => ({
+      ...post,
+      priceValue: Number(post.price.toString().replace(/[^0-9]/g, '')) || 0
+    }))
+  }
 }
 
 export const fetchPlaceById = async (id) => {
-  const { data, error } = await supabase
-    .from('places')
-    .select('*')
-    .eq('id', id)
-    .maybeSingle()
+  try {
+    const { data, error } = await supabase
+      .from('places')
+      .select('*')
+      .eq('id', id)
+      .maybeSingle()
 
-  if (error) throw error
-  return data ? normalizePlace(data) : null
+    if (error) throw error
+    if (data) return normalizePlace(data)
+  } catch (err) {
+    console.warn("Supabase fetch xatosi, mock data ishlatilmoqda:", err.message)
+  }
+
+  const mockPlace = SURKHANDARYA_POSTS.find(p => p.id === id)
+  if (mockPlace) {
+    return {
+      ...mockPlace,
+      priceValue: Number(mockPlace.price.toString().replace(/[^0-9]/g, '')) || 0
+    }
+  }
+  return null
 }
 
 export const fetchPlaceAiText = async (placeId, locale = 'uz') => {
@@ -301,7 +323,30 @@ export const updateProfile = async (userId, updates) => {
       },
       { onConflict: 'id' }
     )
+    .select()
+    .single()
+
+  if (error) throw error
+  return data
+}
+
+export const fetchUserTickets = async (userId) => {
+  if (!userId) return []
+  const { data, error } = await supabase
+    .from('tickets')
     .select('*')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false })
+
+  if (error) throw error
+  return data
+}
+
+export const createTicketInDB = async (ticketData) => {
+  const { data, error } = await supabase
+    .from('tickets')
+    .insert([ticketData])
+    .select()
     .single()
 
   if (error) throw error

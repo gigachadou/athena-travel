@@ -1,6 +1,6 @@
 import React from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
-import { Search, Bot, MapPin, User, Home } from 'lucide-react'
+import { Search, MapPin, User, Home, Ticket, Bot } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import logo from '../assets/logo.png'
 
@@ -26,11 +26,11 @@ export const Header = () => {
           <Link to="/search" className={`action-btn ${location.pathname === '/search' ? 'active' : ''}`}>
             <Search size={22} color="var(--text-dark)" />
           </Link>
-          {location.pathname !== '/ai' && (
-            <Link to="/ai" className="btn-ai-header">
+          {location.pathname !== '/tickets' && (
+            <Link to="/tickets" className="btn-ai-header">
               <div className="ai-pulse"></div>
-              <Bot size={20} color="#0f172a" />
-              <span className="hide-mobile" style={{ color: '#0f172a' }}>{t('ai_chat')}</span>
+              <Ticket size={20} color="#0f172a" />
+              <span className="hide-mobile" style={{ color: '#0f172a' }}>{t('tickets', 'Biletlar')}</span>
             </Link>
           )}
         </div>

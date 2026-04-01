@@ -78,20 +78,21 @@ const ThisPlacePage = () => {
         if (nearby && nearby.length > 0) {
           setNearbyPlaces(nearby)
         } else {
-          setNearbyPlaces([
-            { xid: 'n1', name: 'Markaziy Park', kinds: 'park', dist: 1200 },
-            { xid: 'n2', name: 'Milliy Taomlar', kinds: 'restaurant', dist: 800 },
-            { xid: 'n3', name: 'Grand Hotel', kinds: 'hotel', dist: 2500 },
-          ])
+          const fallbackData = [
+            { id: 'historical_places', items: [{ xid: 'h1', name: 'Eski Jome Masjid', kinds: 'historical', dist: 500 }, { xid: 'h2', name: 'Arxeologiya Muzeyi', kinds: 'museum', dist: 1200 }] },
+            { id: 'museums', items: [{ xid: 'm1', name: 'Termiz muzeyi', kinds: 'museum', dist: 1500 }] },
+            { id: 'hotels', items: [{ xid: 'ht1', name: 'Grand Hotel', kinds: 'hotel', dist: 2500 }, { xid: 'ht2', name: 'Meridian Hotel', kinds: 'hotel', dist: 3100 }] },
+            { id: 'restaurants', items: [{ xid: 'r1', name: 'Milliy Taomlar', kinds: 'restaurant', dist: 800 }, { xid: 'r2', name: 'Choyxona', kinds: 'food', dist: 100 }] },
+            { id: 'parks', items: [{ xid: 'n1', name: 'Markaziy Park', kinds: 'park', dist: 1200 }] },
+          ]
+          const catItems = fallbackData.find(c => c.id === activeCategory)?.items || []
+          setNearbyPlaces(catItems)
         }
       } catch (e) {
         console.error('Failed to load place details:', e)
         setPlaceData(null)
         setComments([])
-        setNearbyPlaces([
-          { xid: 'n1', name: 'Markaziy Park', kinds: 'park', dist: 1200 },
-          { xid: 'n2', name: 'Milliy Taomlar', kinds: 'restaurant', dist: 800 },
-        ])
+        setNearbyPlaces([])
       } finally {
         setLoading(false)
       }
@@ -100,7 +101,7 @@ const ThisPlacePage = () => {
   }, [id, activeCategory, i18n.language, currentUser?.id])
 
   const handleBookingClick = () => {
-    setShowTicket(true)
+    navigate(`/ticket/${id}`)
   }
 
   const handleAddComment = async (e) => {
@@ -248,14 +249,21 @@ const ThisPlacePage = () => {
               <div className="icon-wrap-gold"><Train size={24} /></div>
               <div className="access-info">
                 <label>{t('train', 'Poyezd')}: </label>
-                <span>{placeData.meta?.metroDist || 'N/A'}</span>
+                <span>{placeData.meta?.metroDist || '15 km'}</span>
               </div>
             </div>
             <div className="access-card-premium glass-full">
               <div className="icon-wrap-gold"><Bus size={24} /></div>
               <div className="access-info">
-                <label>{t('bus', 'Avtobus')}: </label>
-                <span>{placeData.meta?.busDist || 'N/A'}</span>
+                <label>{t('bus', 'Avtobus/Metro')}: </label>
+                <span>{placeData.meta?.busDist || '2 km'}</span>
+              </div>
+            </div>
+            <div className="access-card-premium glass-full">
+              <div className="icon-wrap-gold"><Trees size={24} /></div>
+              <div className="access-info">
+                <label>Mavsum: </label>
+                <span>{placeData.meta?.bestSeason || 'Bahor / Kuz'}</span>
               </div>
             </div>
           </div>
@@ -638,12 +646,6 @@ const ThisPlacePage = () => {
             }
         }
       `}</style>
-      {showTicket && (
-        <BookingTicket
-          place={placeData.meta}
-          onClose={() => setShowTicket(false)}
-        />
-      )}
     </div>
   )
 }
