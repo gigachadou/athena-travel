@@ -1,0 +1,248 @@
+.ticket-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(15px);
+  -webkit-backdrop-filter: blur(15px);
+  z-index: 2500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.ticket-container {
+  width: 100%;
+  max-width: 450px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 30px;
+}
+
+.btn-close-ticket {
+  position: absolute;
+  top: -60px;
+  right: 0;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.ticket-perspective {
+  perspective: 1500px;
+  width: 100%;
+  animation: ticket-float 4s ease-in-out infinite;
+}
+
+@keyframes ticket-float {
+  0%, 100% { transform: translateY(0) rotateX(5deg) rotateY(0deg); }
+  50% { transform: translateY(-15px) rotateX(10deg) rotateY(5deg); }
+}
+
+.ticket {
+  position: relative;
+  width: 100%;
+  border-radius: 35px;
+  padding: 30px;
+  overflow: hidden;
+  box-shadow: 
+    0 40px 100px rgba(0, 0, 0, 0.4),
+    inset 0 0 40px rgba(255, 255, 255, 0.1);
+  transform-style: preserve-3d;
+}
+
+.ticket-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 25px;
+}
+
+.ticket-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 900;
+  letter-spacing: 2px;
+  font-size: 14px;
+  color: #f1f5f9;
+}
+
+.icon-gold {
+  color: var(--accent-gold);
+}
+
+.ticket-id {
+  font-size: 13px;
+  font-weight: 700;
+  color: #94a3b8;
+  letter-spacing: 1px;
+}
+
+.ticket-body {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.ticket-image {
+  width: 100%;
+  height: 180px;
+  border-radius: 20px;
+  overflow: hidden;
+  position: relative;
+}
+
+.ticket-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.image-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.4));
+}
+
+.ticket-info {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.info-main h3 {
+  font-size: 24px;
+  font-weight: 800;
+  margin-bottom: 4px;
+  color: white;
+}
+
+.info-main .location {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #cbd5e1;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.info-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+.label {
+  font-size: 11px;
+  text-transform: uppercase;
+  color: #94a3b8;
+  font-weight: 800;
+  margin-bottom: 4px;
+  letter-spacing: 1px;
+}
+
+.val {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: white;
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.ticket-divider {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 10px -30px;
+}
+
+.circle {
+  width: 30px;
+  height: 30px;
+  background: var(--bg-color);
+  border-radius: 50%;
+}
+
+.line {
+  flex: 1;
+  border-top: 2px dashed rgba(255, 255, 255, 0.2);
+}
+
+.ticket-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.qr-section {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.qr-mock {
+  width: 50px;
+  height: 50px;
+  background: white;
+  padding: 5px;
+  border-radius: 8px;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 2px;
+}
+
+.qr-bit {
+  background: black;
+}
+
+.qr-section p {
+  font-size: 10px;
+  font-weight: 700;
+  color: #94a3b8;
+  width: 70px;
+  line-height: 1.2;
+}
+
+.price-section {
+  text-align: right;
+}
+
+.price-section .val {
+  font-size: 20px;
+  justify-content: flex-end;
+}
+
+.hologram-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    135deg, 
+    rgba(255, 255, 255, 0) 0%, 
+    rgba(255, 255, 255, 0.05) 50%, 
+    rgba(255, 255, 255, 0) 100%
+  );
+  pointer-events: none;
+  animation: hologram-move 10s linear infinite;
+}
+
+@keyframes hologram-move {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+.btn-confirm-booking {
+  width: 100%;
+  padding: 20px;
+  border-radius: 24px;
+}
+
+[data-theme="dark"] .ticket {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.03));
+}

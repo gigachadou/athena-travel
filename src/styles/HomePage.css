@@ -1,0 +1,39 @@
+.home-page {
+  padding-bottom: 60px;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+  padding: 0 5px;
+}
+
+.section-header h2 {
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--text-dark);
+}
+
+.btn-link {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--primary-blue);
+  font-weight: 700;
+  text-decoration: none;
+  font-size: 14px;
+  transition: var(--transition);
+}
+
+.btn-link:hover {
+  gap: 12px;
+  opacity: 0.8;
+}
+
+@media (max-width: 768px) {
+  .section-header h2 {
+    font-size: 20px;
+  }
+}

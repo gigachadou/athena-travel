@@ -1,0 +1,255 @@
+:root {
+  --primary-blue: #0284c7; /* Sky blue */
+  --secondary-blue: #0ea5e9;
+  --accent-blue: #e0f2fe;
+  --accent-gold: #f59e0b; /* Amber/Gold accent */
+  --accent-gold-glow: rgba(245, 158, 11, 0.4);
+  --white: #ffffff;
+  --bg-color: #f8fafc;
+  --text-dark: #0f172a;
+  --text-muted: #64748b;
+  --border-radius: 24px;
+  --glass-bg: rgba(255, 255, 255, 0.7);
+  --glass-border: rgba(255, 255, 255, 0.3);
+  --glass-highlight: rgba(255, 255, 255, 0.5);
+  --glass-blur: 15px;
+  --shadow-sm: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
+  --transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  --border-color: #e2e8f0;
+}
+
+[data-theme="dark"] {
+  --bg-color: #020617; /* Deep midnight */
+  --text-dark: #f8fafc;
+  --text-muted: #94a3b8;
+  --glass-bg: rgba(15, 23, 42, 0.92); /* Deeper, more opaque for better contrast */
+  --glass-border: rgba(255, 255, 255, 0.12);
+  --glass-highlight: rgba(255, 255, 255, 0.05);
+  --accent-blue: rgba(14, 165, 233, 0.15);
+  --white: #0f172a; /* Use midnight blue-black instead of slate-700 */
+  --border-color: #1e293b;
+  --accent-gold-glow: rgba(245, 158, 11, 0.3);
+}
+
+/* Base resets */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html {
+  font-size: 16px;
+}
+
+body {
+  font-family: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
+  background-color: var(--bg-color);
+  color: var(--text-dark);
+  line-height: 1.5;
+  overflow-x: hidden;
+}
+
+/* Fluid Typography */
+h1 { font-size: clamp(1.8rem, 5vw, 2.5rem); font-weight: 800; }
+h2 { font-size: clamp(1.5rem, 4vw, 2rem); font-weight: 700; }
+h3 { font-size: 1.25rem; font-weight: 600; }
+
+/* Desktop container */
+.container {
+  width: 100%;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 1.5rem;
+}
+
+/* Glassmorphism utility */
+.glass {
+  background: linear-gradient(135deg, var(--glass-highlight), var(--glass-bg));
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  border: 1px solid var(--glass-border);
+  box-shadow: 
+    inset 0 1px 1px var(--glass-highlight),
+    inset 0 -1px 1px rgba(0,0,0,0.05),
+    var(--shadow-md);
+}
+
+.glass-full {
+  background: rgba(255, 255, 255, 0.4);
+  backdrop-filter: blur(40px);
+  -webkit-backdrop-filter: blur(40px);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  box-shadow: var(--shadow-lg);
+}
+
+/* Buttons */
+button {
+  cursor: pointer;
+  border: none;
+  font-family: inherit;
+  transition: var(--transition);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.btn-primary {
+  background: var(--primary-blue);
+  color: white;
+  padding: 0.9rem 1.8rem;
+  border-radius: 16px;
+  font-weight: 700;
+  box-shadow: 0 4px 15px rgba(2, 132, 199, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.btn-accent {
+  background: var(--accent-gold);
+  color: #0f172a; /* Dark text on gold for premium look */
+  padding: 0.9rem 1.8rem;
+  border-radius: 16px;
+  font-weight: 700;
+  box-shadow: 0 4px 20px var(--accent-gold-glow);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.btn-accent:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px var(--accent-gold-glow);
+  filter: brightness(1.1);
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 71, 171, 0.23);
+  filter: brightness(1.1);
+}
+
+.btn-icon-round {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  padding: 0;
+}
+
+/* Responsive Grid */
+.responsive-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1.5rem;
+}
+
+@media (max-width: 640px) {
+  .responsive-grid {
+    grid-template-columns: 1fr;
+  }
+  .container {
+    padding: 0 1rem;
+  }
+}
+
+/* Animations */
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-up {
+  animation: slideUp 0.5s ease-out forwards;
+}
+
+/* Hide default scrollbar but keep functionality for specific elements */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Premium Global Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-color);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--glass-border);
+  border-radius: 10px;
+  border: 2px solid var(--bg-color);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}
+
+/* Better Focus States */
+:focus-visible {
+  outline: 2px solid var(--accent-gold);
+  outline-offset: 4px;
+}
+
+/* Selection color */
+::selection {
+  background: var(--accent-gold-glow);
+  color: var(--text-dark);
+}
+
+/* Custom Map Markers */
+.custom-marker {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50% 50% 50% 0;
+  transform: rotate(-45deg);
+  border: 3px solid white;
+  box-shadow: var(--shadow-md);
+  position: relative;
+  transition: var(--transition);
+}
+
+.marker-icon-inner {
+  transform: rotate(45deg);
+  color: white;
+  display: flex;
+}
+
+.marker-landmark { background: var(--primary-blue); }
+.marker-hotel { background: #8e44ad; }
+.marker-restaurant { background: #e67e22; }
+.marker-user { background: #f1c40f; border-color: #f39c12; }
+
+/* Pulsing effect */
+.custom-marker::before {
+  content: '';
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+  background: inherit;
+  opacity: 0.5;
+  z-index: -1;
+  animation: marker-pulse 2s infinite;
+}
+
+@keyframes marker-pulse {
+  0% { transform: scale(1); opacity: 0.6; }
+  100% { transform: scale(2.2); opacity: 0; }
+}
+
+.custom-marker:hover {
+  transform: scale(1.2) rotate(-45deg);
+  box-shadow: var(--shadow-lg);
+  z-index: 1000 !important;
+}
