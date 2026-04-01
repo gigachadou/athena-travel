@@ -43,6 +43,33 @@ create table if not exists public.places (
   created_at timestamp with time zone default timezone('utc'::text, now())
 );
 
+-- TICKETS 
+create table public.tickets (
+  id uuid default gen_random_uuid() primary key,
+  user_id uuid references auth.users(id) on delete cascade not null,
+  place_id text not null,
+  place_title text not null,
+  place_location text,
+  ticket_type text,
+  guests integer default 1,
+  date date not null,
+  passenger_name text not null,
+  passenger_phone text,
+  passenger_email text,
+  status text default 'confirmed',
+  total_price numeric not null,
+  seat text,
+  train text,
+  coach text,
+  platform text,
+  depart_time text,
+  arrival_time text,
+  ticket_class text,
+  qr_code text,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
+
+
 -- PLACE AI TEXTS (AI yozgan matnlar)
 create table if not exists public.place_ai_texts (
   id uuid default uuid_generate_v4() primary key,
@@ -155,6 +182,7 @@ alter table public.places enable row level security;
 alter table public.place_ai_texts enable row level security;
 alter table public.comments enable row level security;
 alter table public.favorites enable row level security;
+alter table public.tickets enable row level security;
 
 -- Profiles: O'zining profilini ko'rish va yangilash
 create policy "Users can view all profiles" on profiles for select using (true);
@@ -177,6 +205,11 @@ create policy "Users can delete own comments" on comments for delete using (auth
 create policy "Users can view own favorites" on favorites for select using (auth.uid() = user_id);
 create policy "Users can insert own favorites" on favorites for insert with check (auth.role() = 'authenticated');
 create policy "Users can delete own favorites" on favorites for delete using (auth.uid() = user_id);
+
+-- Tickets: Faqat o'zining chiptalarini ko'radi va boshqaradi
+create policy "Users can view their own tickets" on public.tickets for select using ( auth.uid() = user_id );
+create policy "Users can insert their own tickets" on public.tickets for insert with check ( auth.uid() = user_id );
+create policy "Users can update their own tickets" on public.tickets for update using ( auth.uid() = user_id );
 
 -- 5. INITIAL DATA (Boshlang'ich Ma'lumotlar - Surxondaryo)
 
