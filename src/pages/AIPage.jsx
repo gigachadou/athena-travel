@@ -26,7 +26,7 @@ const stripMarkdownForSpeech = (text) =>
     .trim();
 
 const AIPage = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const location = useLocation();
   const [messages, setMessages] = useState([WELCOME_MESSAGE]);
   const [input, setInput] = useState('');
@@ -121,7 +121,7 @@ const AIPage = () => {
     setIsLoading(true);
 
     try {
-      const responseText = await getAIResponse(trimmedText, history);
+      const responseText = await getAIResponse(trimmedText, history, { locale: i18n.language });
       const aiMessage = {
         id: Date.now() + 1,
         text: responseText,

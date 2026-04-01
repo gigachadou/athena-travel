@@ -1,10 +1,12 @@
 import { GoogleGenAI } from '@google/genai';
 import { SURKHANDARYA_POSTS } from '../data/posts';
+import { fetchPlacesForAI, formatPrice } from './databaseService';
+import { isSupabaseConfigured } from '../lib/supabase';
 
 const API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
 const MODEL_NAME = 'gemini-2.5-flash';
 
-const DESTINATION_CONTEXT = SURKHANDARYA_POSTS.map((post) => ({
+const FALLBACK_DESTINATION_CONTEXT = SURKHANDARYA_POSTS.map((post) => ({
   title: post.title,
   location: post.location,
   type: post.type,
@@ -15,22 +17,13 @@ const DESTINATION_CONTEXT = SURKHANDARYA_POSTS.map((post) => ({
   rating: post.rating,
 }));
 
-const SYSTEM_PROMPT = `
-Siz "Premium Travel AI" nomli premium sayohat yordamchisiz.
-Siz foydalanuvchilarga Surxondaryo va O'zbekiston bo'ylab sayohat, mehmonxona, dam olish, marshrut va tavsiyalar bo'yicha yordam berasiz.
-
-Platformadagi real joylar bazasi:
-${JSON.stringify(DESTINATION_CONTEXT, null, 2)}
-
-Qoidalar:
-1. Doimo o'zbek tilida, xushmuomala va aniq uslubda javob bering.
-2. Iloji bo'lsa, javoblarni yuqoridagi real ma'lumotlarga tayang.
-3. Agar ma'lumot bazada bo'lmasa, buni ochiq ayting va foydali umumiy tavsiya bering.
-4. Javoblarni o'qish oson bo'lsin: qisqa abzatslar, punktlar va aniq tavsiyalar ishlating.
-5. Sayohat, narx va mavsum haqidagi savollarda amaliy tavsiya bering.
-`;
-
 let aiClient;
+const CONTEXT_CACHE_TTL = 60_000;
+let aiContextCache = {
+  locale: null,
+  fetchedAt: 0,
+  value: null,
+};
 
 const getClient = () => {
   if (!API_KEY) {
@@ -69,8 +62,91 @@ const getFriendlyErrorMessage = (error) => {
 
 export const hasGeminiApiKey = Boolean(API_KEY);
 
-export const getAIResponse = async (userMessage, history = []) => {
+const mapPlaceForPrompt = (place) => ({
+  title: place.title,
+  location: place.location,
+  type: place.type,
+  price: place.price || formatPrice(place.priceValue),
+  pricePerPerson: place.pricePerPerson || null,
+  description: place.aiSummary || place.description || '',
+  amenities: place.amenities || [],
+  bestSeason: place.bestSeason || '',
+  duration: place.duration || '',
+  difficulty: place.difficulty || '',
+  airportDist: place.airportDist || '',
+  metroDist: place.metroDist || '',
+  busDist: place.busDist || '',
+  rating: place.rating,
+  ratingCount: place.ratingCount,
+})
+
+const getFallbackContext = () => FALLBACK_DESTINATION_CONTEXT
+
+const getDatabaseContext = async (locale = 'uz') => {
+  if (!isSupabaseConfigured) {
+    return null
+  }
+
+  const normalizedLocale = locale === 'uz' ? 'uz' : 'en'
+  const now = Date.now()
+
+  if (
+    aiContextCache.value &&
+    aiContextCache.locale === normalizedLocale &&
+    now - aiContextCache.fetchedAt < CONTEXT_CACHE_TTL
+  ) {
+    return aiContextCache.value
+  }
+
+  const places = await fetchPlacesForAI(normalizedLocale)
+  const promptContext = places.map(mapPlaceForPrompt)
+
+  aiContextCache = {
+    locale: normalizedLocale,
+    fetchedAt: now,
+    value: promptContext,
+  }
+
+  return promptContext
+}
+
+const getDestinationContext = async (locale = 'uz') => {
+  try {
+    const databaseContext = await getDatabaseContext(locale)
+    if (databaseContext?.length) {
+      return databaseContext
+    }
+  } catch (error) {
+    console.error('Failed to load AI context from database:', error)
+  }
+
+  return getFallbackContext()
+}
+
+const buildSystemPrompt = (destinationContext, locale = 'uz') => {
+  const responseLanguage = locale === 'uz' ? "o'zbek" : 'english'
+
+  return `
+Siz "Premium Travel AI" nomli premium sayohat yordamchisiz.
+Siz foydalanuvchilarga Surxondaryo va O'zbekiston bo'ylab sayohat, mehmonxona, dam olish, marshrut va tavsiyalar bo'yicha yordam berasiz.
+
+Platformadagi real joylar bazasi:
+${JSON.stringify(destinationContext, null, 2)}
+
+Qoidalar:
+1. Doimo ${responseLanguage} tilida, xushmuomala va aniq uslubda javob bering.
+2. Iloji bo'lsa, javoblarni yuqoridagi real ma'lumotlarga tayang.
+3. Agar ma'lumot bazada bo'lmasa, buni ochiq ayting va foydali umumiy tavsiya bering.
+4. Javoblarni o'qish oson bo'lsin: qisqa abzatslar, punktlar va aniq tavsiyalar ishlating.
+5. Sayohat, narx va mavsum haqidagi savollarda amaliy tavsiya bering.
+6. Bitta joy haqida so'ralsa, shu joyning description/summary maydonlarini ustuvor manba sifatida ishlating.
+7. Faqat platformadagi bazada bor faktlarni aniq fakt sifatida ayting. Ishonchingiz komil bo'lmasa, ehtiyotkor ibora ishlating.
+`;
+}
+
+export const getAIResponse = async (userMessage, history = [], options = {}) => {
   const trimmedMessage = userMessage?.trim();
+  const locale = options.locale === 'en' ? 'en' : 'uz'
 
   if (!trimmedMessage) {
     return "Savol matni bo'sh bo'lmasligi kerak.";
@@ -83,6 +159,8 @@ export const getAIResponse = async (userMessage, history = []) => {
   }
 
   try {
+    const destinationContext = await getDestinationContext(locale)
+
     const response = await client.models.generateContent({
       model: MODEL_NAME,
       contents: [
@@ -93,7 +171,7 @@ export const getAIResponse = async (userMessage, history = []) => {
         },
       ],
       config: {
-        systemInstruction: SYSTEM_PROMPT,
+        systemInstruction: buildSystemPrompt(destinationContext, locale),
       },
     });
 
