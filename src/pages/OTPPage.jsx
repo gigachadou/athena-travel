@@ -1,31 +1,13 @@
-import React, { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { Landmark, ArrowLeft, ShieldCheck } from 'lucide-react'
+import React from 'react'
+import { useNavigate, useLocation, Link } from 'react-router-dom'
+import { ArrowLeft, MailCheck } from 'lucide-react'
 
 import '../styles/AuthPage.css'
 
-const OTPPage = ({ setIsAuthenticated }) => {
-  const [otp, setOtp] = useState(['', '', '', '', '', ''])
+const OTPPage = () => {
   const navigate = useNavigate()
-
-  const handleChange = (element, index) => {
-    if (isNaN(element.value)) return false
-
-    setOtp([...otp.map((d, idx) => (idx === index ? element.value : d))])
-
-    // Focus next input
-    if (element.nextSibling && element.value !== '') {
-      element.nextSibling.focus()
-    }
-  }
-
-  const handleVerify = (e) => {
-    e.preventDefault()
-    if (otp.every(v => v !== '')) {
-      setIsAuthenticated(true)
-      navigate('/')
-    }
-  }
+  const location = useLocation()
+  const pendingEmail = location.state?.email
 
   return (
     <div className="auth-page fade-in">
@@ -35,37 +17,21 @@ const OTPPage = ({ setIsAuthenticated }) => {
         </button>
         
         <div className="auth-logo">
-          <ShieldCheck size={40} color="var(--primary-blue)" />
+          <MailCheck size={40} color="var(--primary-blue)" />
         </div>
         
-        <h1 className="auth-title">Tasdiqlash</h1>
-        <p className="auth-subtitle">Telefoningizga yuborilgan 6 xonali maxfiy kodni kiriting</p>
-        
-        <form onSubmit={handleVerify} className="auth-form">
-          <div className="otp-inputs" style={{ display: 'flex', gap: '10px', justifyContent: 'center', marginBottom: '30px' }}>
-            {otp.map((data, index) => {
-              return (
-                <input
-                  style={{ width: '45px', height: '60px', borderRadius: '15px', border: '1px solid var(--border-color)', textAlign: 'center', fontSize: '24px', fontWeight: '800', background: 'white' }}
-                  type="text"
-                  name="otp"
-                  maxLength="1"
-                  key={index}
-                  value={data}
-                  onChange={e => handleChange(e.target, index)}
-                  onFocus={e => e.target.select()}
-                />
-              )
-            })}
-          </div>
-          <button type="submit" className="btn-primary auth-btn">
-            Tasdiqlash
-          </button>
-        </form>
+        <h1 className="auth-title">Emailni tasdiqlang</h1>
+        <p className="auth-subtitle">
+          {pendingEmail
+            ? `${pendingEmail} manziliga tasdiqlash xabari yuborildi. Email ichidagi havola orqali akkauntni faollashtiring.`
+            : 'Agar Supabase loyihangizda email confirmation yoqilgan bo‘lsa, pochtangizdagi tasdiqlash havolasini bosing.'}
+        </p>
         
         <div className="resend-container" style={{ marginTop: '30px', textAlign: 'center' }}>
-          <p style={{ fontSize: '14px', color: 'var(--text-muted)', marginBottom: '5px' }}>Kod kelmadimi?</p>
-          <button style={{ color: 'var(--primary-blue)', fontWeight: '800', background: 'none' }}>Qayta yuborish</button>
+          <p style={{ fontSize: '14px', color: 'var(--text-muted)', marginBottom: '12px' }}>Tasdiqlagandan keyin login qilishingiz mumkin</p>
+          <Link to="/login" style={{ color: 'var(--primary-blue)', fontWeight: '800', background: 'none' }}>
+            Login sahifasiga o‘tish
+          </Link>
         </div>
       </div>
     </div>

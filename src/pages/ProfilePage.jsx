@@ -3,21 +3,20 @@ import { useNavigate } from 'react-router-dom'
 import { User, Settings as SettingsIcon, Bell, Shield, LogOut, Trash2, ChevronRight, Camera, X, Check, Moon, Sun, Globe } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import '../styles/ProfilePage.css'
+import Loading from '../components/Loading'
+import { useAuth } from '../context/AuthContext'
 
-const ProfilePage = ({ setIsAuthenticated }) => {
+const ProfilePage = () => {
   const { t, i18n } = useTranslation()
   const navigate = useNavigate()
-  
-  // Load initial data from localStorage or defaults
-  const [userData, setUserData] = useState(() => {
-    const saved = localStorage.getItem('afina_user_data')
-    return saved ? JSON.parse(saved) : {
-      name: 'Foydalanuvchi Ismi',
-      phone: '+998 90 123 45 67',
-      email: 'user@example.com',
-      bio: 'Sayohat qilishni yaxshi ko\'raman. Dunyoni kashf etish mening maqsadim!',
-      avatar: null
-    }
+  const [profileLoading, setProfileLoading] = useState(true)
+  const [profileError, setProfileError] = useState('')
+  const { user, profile, saveProfile, logout } = useAuth()
+  const [userData, setUserData] = useState({
+    username: '',
+    name: '',
+    email: '',
+    avatar: null,
   })
 
   const [settings, setSettings] = useState(() => {
@@ -33,25 +32,76 @@ const ProfilePage = ({ setIsAuthenticated }) => {
   const [editForm, setEditForm] = useState(userData)
   const [activeTab, setActiveTab] = useState('main') // 'main', 'settings', 'security'
 
-  // Persist data
-  useEffect(() => {
-    localStorage.setItem('afina_user_data', JSON.stringify(userData))
-  }, [userData])
-
   useEffect(() => {
     localStorage.setItem('afina_settings', JSON.stringify(settings))
     // Apply theme globally
     document.documentElement.setAttribute('data-theme', settings.darkMode ? 'dark' : 'light')
   }, [settings])
 
-  const handleLogout = () => {
-    setIsAuthenticated(false)
-    navigate('/login')
+  useEffect(() => {
+    const loadProfile = async () => {
+      if (!user?.id) {
+        setProfileLoading(false)
+        return
+      }
+
+      setProfileLoading(true)
+      setProfileError('')
+
+      try {
+        const nextUserData = {
+          username: profile?.username || user.username || '',
+          name: profile?.full_name || user.fullName || 'Foydalanuvchi',
+          email: profile?.email || user.email || '',
+          avatar: profile?.avatar_url || user.avatarUrl || null,
+        }
+
+        setUserData(nextUserData)
+        setEditForm(nextUserData)
+      } catch (error) {
+        console.error('Failed to load profile:', error)
+        setProfileError("Profil ma'lumotlarini yuklab bo'lmadi.")
+      } finally {
+        setProfileLoading(false)
+      }
+    }
+
+    loadProfile()
+  }, [user?.id, profile?.username, profile?.full_name, profile?.email, profile?.avatar_url])
+
+  const handleLogout = async () => {
+    try {
+      await logout()
+    } catch (error) {
+      console.error('Failed to sign out:', error)
+    } finally {
+      navigate('/login')
+    }
   }
 
-  const handleSaveProfile = () => {
-    setUserData(editForm)
-    setIsEditing(false)
+  const handleSaveProfile = async () => {
+    try {
+      const updatedProfile = await saveProfile({
+        username: editForm.username,
+        full_name: editForm.name,
+        avatar_url: editForm.avatar,
+      })
+
+      const nextUserData = {
+        ...editForm,
+        name: updatedProfile.full_name || editForm.name,
+        email: updatedProfile.email || editForm.email,
+        avatar: updatedProfile.avatar_url || editForm.avatar,
+      }
+
+      setUserData(nextUserData)
+      setEditForm(nextUserData)
+      setIsEditing(false)
+      setProfileError('')
+    } catch (error) {
+      console.error('Failed to update profile:', error)
+      setProfileError("Profilni saqlab bo'lmadi.")
+    }
   }
 
   const toggleSetting = (key) => {
@@ -72,6 +122,14 @@ const ProfilePage = ({ setIsAuthenticated }) => {
         </div>
         <div className="modal-body">
           <div className="input-group">
+            <label>Username</label>
+            <input
+              type="text"
+              value={editForm.username}
+              onChange={e => setEditForm({...editForm, username: e.target.value})}
+            />
+          </div>
+          <div className="input-group">
             <label>{t('name')}</label>
             <input 
               type="text" 
@@ -80,20 +138,8 @@ const ProfilePage = ({ setIsAuthenticated }) => {
             />
           </div>
           <div className="input-group">
-            <label>{t('phone')}</label>
-            <input 
-              type="text" 
-              value={editForm.phone} 
-              onChange={e => setEditForm({...editForm, phone: e.target.value})}
-            />
-          </div>
-          <div className="input-group">
-            <label>{t('bio')}</label>
-            <textarea 
-              rows="3"
-              value={editForm.bio} 
-              onChange={e => setEditForm({...editForm, bio: e.target.value})}
-            />
+            <label>Email</label>
+            <input type="text" value={editForm.email} disabled />
           </div>
         </div>
         <div className="modal-footer">
@@ -196,10 +242,12 @@ const ProfilePage = ({ setIsAuthenticated }) => {
 
   if (activeTab === 'settings') return renderSettingsView()
   if (activeTab === 'security') return renderSecurityView()
+  if (profileLoading) return <Loading fullPage message={t('loading')} />
 
   return (
     <div className="profile-page fade-in">
       {isEditing && renderEditModal()}
+      {profileError && <p style={{ color: '#d14343', marginBottom: '16px' }}>{profileError}</p>}
       
       <div className="profile-card glass">
         <div className="avatar-wrapper">
@@ -211,8 +259,8 @@ const ProfilePage = ({ setIsAuthenticated }) => {
           </div>
         </div>
         <h2 className="user-name">{userData.name}</h2>
-        <p className="user-bio">{userData.bio}</p>
-        <p className="user-phone">{userData.phone}</p>
+        <p className="user-phone">@{userData.username}</p>
+        <p className="user-phone">{userData.email}</p>
         
         <button className="btn-edit-inline" onClick={() => { setEditForm(userData); setIsEditing(true); }}>
             {t('edit_profile')}

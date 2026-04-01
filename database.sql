@@ -7,12 +7,16 @@ create extension if not exists "uuid-ossp";
 -- Bu Auth.users bilan avtomatik bog'lanadi
 create table if not exists public.profiles (
   id uuid references auth.users on delete cascade primary key,
+  username text,
   full_name text,
   avatar_url text,
   email text,
   updated_at timestamp with time zone default timezone('utc'::text, now()),
   created_at timestamp with time zone default timezone('utc'::text, now())
 );
+
+alter table public.profiles add column if not exists username text;
+create unique index if not exists profiles_username_key on public.profiles (username);
 
 -- PLACES (Sayohat Joylari)
 create table if not exists public.places (
@@ -64,16 +68,30 @@ create table if not exists public.favorites (
 create or replace function public.handle_new_user()
 returns trigger as $$
 begin
-  insert into public.profiles (id, full_name, avatar_url, email)
-  values (new.id, new.raw_user_meta_data->>'full_name', new.raw_user_meta_data->>'avatar_url', new.email);
+  insert into public.profiles (id, username, full_name, avatar_url, email)
+  values (
+    new.id,
+    new.raw_user_meta_data->>'username',
+    new.raw_user_meta_data->>'full_name',
+    new.raw_user_meta_data->>'avatar_url',
+    new.email
+  )
+  on conflict (id) do update
+  set
+    username = excluded.username,
+    full_name = excluded.full_name,
+    avatar_url = excluded.avatar_url,
+    email = excluded.email,
+    updated_at = timezone('utc'::text, now());
   return new;
 end;
 $$ language plpgsql security definer;
 
 -- Auth.users dan profile ga trigger
--- create trigger on_auth_user_created
---   after insert on auth.users
---   for each row execute procedure public.handle_new_user();
+drop trigger if exists on_auth_user_created on auth.users;
+create trigger on_auth_user_created
+  after insert on auth.users
+  for each row execute procedure public.handle_new_user();
 
 -- Average Rating ni hisoblash funksiyasi
 create or replace function update_average_rating()
@@ -101,6 +119,7 @@ alter table public.favorites enable row level security;
 
 -- Profiles: O'zining profilini ko'rish va yangilash
 create policy "Users can view all profiles" on profiles for select using (true);
+create policy "Users can insert own profile" on profiles for insert with check (auth.uid() = id);
 create policy "Users can update own profile" on profiles for update using (auth.uid() = id);
 
 -- Places: Hamma ko'rishi mumkin, lekin faqat Admin o'zgartira oladi (Hozircha hamma select qilishi mumkin)

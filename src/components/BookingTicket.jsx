@@ -2,10 +2,12 @@ import React from 'react'
 import { X, Calendar, MapPin, User, ChevronRight, Ticket as TicketIcon } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import '../styles/BookingTicket.css'
+import { useAuth } from '../context/AuthContext'
 
 const BookingTicket = ({ place, onClose }) => {
   const { t, i18n } = useTranslation()
-  const userName = JSON.parse(localStorage.getItem('afina_user_data'))?.name || 'Sayohatsiz'
+  const { user } = useAuth()
+  const userName = user?.fullName || user?.username || 'Sayohatchi'
   const currentDate = new Date().toLocaleDateString(i18n.language === 'uz' ? 'uz-UZ' : 'en-US', { day: 'numeric', month: 'long', year: 'numeric' })
 
   return (

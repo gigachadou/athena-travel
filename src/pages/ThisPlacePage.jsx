@@ -5,13 +5,15 @@ import { Star, Heart, Share2, MapPin, ArrowLeft, Send, ExternalLink, History, La
 import Loading from '../components/Loading'
 import BookingTicket from '../components/BookingTicket'
 import { fetchWikipediaSummary, fetchPlacesFromOTM } from '../utils/api'
-import { SURKHANDARYA_POSTS } from '../data/posts'
+import { addComment, addFavorite, fetchCommentsByPlaceId, fetchIsFavorite, fetchPlaceById, removeFavorite } from '../services/databaseService'
 import '../styles/ThisPlacePage.css'
+import { useAuth } from '../context/AuthContext'
 
 const ThisPlacePage = () => {
   const { id } = useParams()
   const navigate = useNavigate()
   const { t, i18n } = useTranslation()
+  const { user: currentUser } = useAuth()
   const [isLiked, setIsLiked] = useState(false)
   const [comment, setComment] = useState('')
   const [loading, setLoading] = useState(true)
@@ -23,10 +25,9 @@ const ThisPlacePage = () => {
   const [hoverRating, setHoverRating] = useState(0)
   const [showSparkles, setShowSparkles] = useState(false)
   const [showTicket, setShowTicket] = useState(false)
-  const [comments, setComments] = useState([
-    { id: 1, user: 'Jasur', text: 'Juda ajoyib joy ekan, hammaga tavsiya qilaman!', date: '2 kun oldin', rating: 5 },
-    { id: 2, user: 'Malika', text: 'Manzara juda gozal, dam olish uchun eng yaxshi maskan.', date: '1 hafta oldin', rating: 4 }
-  ])
+  const [comments, setComments] = useState([])
+  const [commentError, setCommentError] = useState('')
+  const [favoriteBusy, setFavoriteBusy] = useState(false)
 
   const CATEGORIES = [
     { id: 'historical_places', label: t('landmarks'), icon: <Landmark size={18} /> },
@@ -39,88 +40,140 @@ const ThisPlacePage = () => {
   useEffect(() => {
     const loadData = async () => {
       setLoading(true)
-      // Robust ID comparison for demo
-      const post = SURKHANDARYA_POSTS.find(p => String(p.id) === String(id))
-      
-      if (post) {
-          // Immediately set base data from our static file for demo speed
+      try {
+        const [place, placeComments] = await Promise.all([
+          fetchPlaceById(id),
+          fetchCommentsByPlaceId(id),
+        ])
+
+        setComments(placeComments)
+
+        if (place) {
           setPlaceData({
-              title: post.title,
-              extract: post.description,
-              meta: post
+            title: place.title,
+            extract: place.description,
+            meta: place,
           })
           setGalleryImages([
-              post.image,
-              'https://images.unsplash.com/photo-1590073242678-70ee3fc28e8e?w=800',
-              'https://images.unsplash.com/photo-1540959196431-2fd74d538645?w=800'
+            place.image,
+            'https://images.unsplash.com/photo-1590073242678-70ee3fc28e8e?w=800',
+            'https://images.unsplash.com/photo-1540959196431-2fd74d538645?w=800',
           ])
-      }
 
-      // Try enrichment but don't block
-      const placeName = post ? post.title : 'Surkhandarya'
-      const lang = i18n.language === 'uz' ? 'uz' : 'en'
-      
-      try {
-          const wikiData = await fetchWikipediaSummary(placeName, lang)
-          if (wikiData) {
-              setPlaceData(prev => ({
-                  ...prev,
-                  extract: wikiData.extract || prev.extract,
-                  link: wikiData.link
-              }))
-          }
-      } catch (e) {
-          console.log("Wiki enrichment skipped for demo")
-      }
-
-      // Nearby places fallback for demo
-      try {
-          const coords = post ? { lat: post.lat, lon: post.lon } : { lat: 37.22, lon: 67.27 }
-          const nearby = await fetchPlacesFromOTM(coords.lat, coords.lon, activeCategory)
-          if (nearby && nearby.length > 0) {
-              setNearbyPlaces(nearby)
+          if (currentUser) {
+            const favoriteState = await fetchIsFavorite({ placeId: id, userId: currentUser.id })
+            setIsLiked(favoriteState)
           } else {
-              // Static nearby places for demo
-              setNearbyPlaces([
-                  { xid: 'n1', name: 'Markaziy Park', kinds: 'park', dist: 1200 },
-                  { xid: 'n2', name: 'Milliy Taomlar', kinds: 'restaurant', dist: 800 },
-                  { xid: 'n3', name: 'Grand Hotel', kinds: 'hotel', dist: 2500 }
-              ])
+            setIsLiked(false)
           }
-      } catch (e) {
+        }
+
+        const placeName = place ? place.title : 'Surkhandarya'
+        const lang = i18n.language === 'uz' ? 'uz' : 'en'
+        const wikiData = await fetchWikipediaSummary(placeName, lang)
+        if (wikiData) {
+          setPlaceData(prev => ({
+            ...prev,
+            extract: wikiData.extract || prev?.extract,
+            link: wikiData.link,
+          }))
+        }
+
+        const coords = place ? { lat: place.lat, lon: place.lon } : { lat: 37.22, lon: 67.27 }
+        const nearby = await fetchPlacesFromOTM(coords.lat, coords.lon, activeCategory)
+        if (nearby && nearby.length > 0) {
+          setNearbyPlaces(nearby)
+        } else {
           setNearbyPlaces([
-              { xid: 'n1', name: 'Markaziy Park', kinds: 'park', dist: 1200 },
-              { xid: 'n2', name: 'Milliy Taomlar', kinds: 'restaurant', dist: 800 }
+            { xid: 'n1', name: 'Markaziy Park', kinds: 'park', dist: 1200 },
+            { xid: 'n2', name: 'Milliy Taomlar', kinds: 'restaurant', dist: 800 },
+            { xid: 'n3', name: 'Grand Hotel', kinds: 'hotel', dist: 2500 },
           ])
+        }
+      } catch (e) {
+        console.error('Failed to load place details:', e)
+        setPlaceData(null)
+        setComments([])
+        setNearbyPlaces([
+          { xid: 'n1', name: 'Markaziy Park', kinds: 'park', dist: 1200 },
+          { xid: 'n2', name: 'Milliy Taomlar', kinds: 'restaurant', dist: 800 },
+        ])
+      } finally {
+        setLoading(false)
       }
-      
-      setLoading(false)
     }
     loadData()
-  }, [id, activeCategory, i18n.language])
+  }, [id, activeCategory, i18n.language, currentUser?.id])
 
   const handleBookingClick = () => {
     setShowTicket(true)
   }
 
-  const handleAddComment = (e) => {
+  const handleAddComment = async (e) => {
     e.preventDefault()
     if (!comment.trim()) return
-    const newComment = {
-      id: Date.now(),
-      user: 'Siz',
-      text: comment,
-      date: 'Hozir',
-      rating: userRating || 5
+
+    if (!currentUser) {
+      setCommentError('Fikr yozish uchun avval tizimga kiring.')
+      return
     }
-    setComments([newComment, ...comments])
-    setComment('')
+
+    try {
+      setCommentError('')
+      await addComment({
+        placeId: id,
+        userId: currentUser.id,
+        commentText: comment.trim(),
+        rating: userRating || 5,
+      })
+
+      const refreshedComments = await fetchCommentsByPlaceId(id)
+      setComments(refreshedComments)
+      setComment('')
+    } catch (error) {
+      console.error('Failed to add comment:', error)
+      setCommentError("Fikrni saqlab bo'lmadi.")
+    }
   }
 
   const handleRate = (val) => {
     setUserRating(val)
     setShowSparkles(true)
     setTimeout(() => setShowSparkles(false), 2000)
+  }
+
+  const handleFavoriteToggle = async () => {
+    if (!currentUser) {
+      setCommentError('Sevimlilarga qo‘shish uchun avval tizimga kiring.')
+      return
+    }
+
+    try {
+      setFavoriteBusy(true)
+      setCommentError('')
+
+      if (isLiked) {
+        await removeFavorite({ placeId: id, userId: currentUser.id })
+        setIsLiked(false)
+      } else {
+        await addFavorite({ placeId: id, userId: currentUser.id })
+        setIsLiked(true)
+      }
+    } catch (error) {
+      console.error('Failed to update favorite:', error)
+      setCommentError("Sevimli holatini yangilab bo'lmadi.")
+    } finally {
+      setFavoriteBusy(false)
+    }
+  }
+
+  const formatCommentDate = (value) => {
+    if (!value) return 'Hozir'
+    return new Date(value).toLocaleDateString(i18n.language === 'uz' ? 'uz-UZ' : 'en-US', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+    })
   }
 
   if (loading) {
@@ -145,7 +198,7 @@ const ThisPlacePage = () => {
           <ArrowLeft size={24} />
         </button>
         <div className="header-actions">
-          <button onClick={() => setIsLiked(!isLiked)} className={`btn-icon-action glass ${isLiked ? 'liked' : ''}`}>
+          <button onClick={handleFavoriteToggle} disabled={favoriteBusy} className={`btn-icon-action glass ${isLiked ? 'liked' : ''}`}>
             <Heart size={24} fill={isLiked ? '#ff4757' : 'none'} />
           </button>
           <button className="book-btn btn-accent" onClick={handleBookingClick}>
@@ -173,7 +226,7 @@ const ThisPlacePage = () => {
           </div>
           <div className="rating-badge-premium glass-full">
             <Star size={16} fill="var(--accent-gold)" stroke="var(--accent-gold)" />
-            <span>4.8</span>
+            <span>{placeData.meta?.rating?.toFixed(1) || '0.0'}</span>
           </div>
         </div>
         
@@ -247,33 +300,6 @@ const ThisPlacePage = () => {
           </div>
         </section>
 
-        <section className="user-rating-section animate-up">
-            <div className="rating-card glass-full">
-                <div className="rating-text">
-                    <h3>Qanday baholaysiz?</h3>
-                    <p>Fikringiz biz uchun muhim!</p>
-                </div>
-                <div className="interactive-stars">
-                    {[1, 2, 3, 4, 5].map((star) => (
-                        <button 
-                            key={star} 
-                            className={`star-btn ${star <= (hoverRating || userRating) ? 'active' : ''}`}
-                            onMouseEnter={() => setHoverRating(star)}
-                            onMouseLeave={() => setHoverRating(0)}
-                            onClick={() => handleRate(star)}
-                        >
-                            <Star 
-                                size={32} 
-                                fill={star <= (hoverRating || userRating) ? "var(--accent-gold)" : "none"} 
-                                stroke={star <= (hoverRating || userRating) ? "var(--accent-gold)" : "var(--text-muted)"}
-                            />
-                        </button>
-                    ))}
-                </div>
-                {showSparkles && <div className="rating-success animate-pop"><Sparkles size={20} /> Rahmat!</div>}
-            </div>
-        </section>
-
         <section className="nearby-section animate-up" style={{ marginTop: '40px' }}>
           <div className="section-title">
             <MapPin size={20} color="var(--accent-gold)" />
@@ -316,17 +342,51 @@ const ThisPlacePage = () => {
 
         <section className="comments-section animate-up">
           <h3>Fikrlar <span className="comment-count">({comments.length})</span></h3>
-          <form className="comment-form" onSubmit={handleAddComment}>
-            <input 
-              type="text" 
-              placeholder={t('search_placeholder')} 
-              value={comment}
-              onChange={(e) => setComment(e.target.value)}
-            />
-            <button type="submit" className="btn-send-comment">
-              <Send size={18} />
-            </button>
-          </form>
+          <div className="comment-composer glass-full">
+            <div className="rating-text">
+              <h4>Baholang va fikr qoldiring</h4>
+              <p>Reyting va izoh birga yuboriladi.</p>
+            </div>
+            <form className="comment-form" onSubmit={handleAddComment}>
+              <div className="interactive-stars comment-stars">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <button
+                    key={star}
+                    type="button"
+                    className={`star-btn ${star <= (hoverRating || userRating) ? 'active' : ''}`}
+                    onMouseEnter={() => setHoverRating(star)}
+                    onMouseLeave={() => setHoverRating(0)}
+                    onClick={() => handleRate(star)}
+                  >
+                    <Star
+                      size={28}
+                      fill={star <= (hoverRating || userRating) ? 'var(--accent-gold)' : 'none'}
+                      stroke={star <= (hoverRating || userRating) ? 'var(--accent-gold)' : 'var(--text-muted)'}
+                    />
+                  </button>
+                ))}
+              </div>
+              <div className="comment-input-row">
+                <textarea
+                  placeholder={currentUser ? 'Fikringizni yozing...' : 'Fikr yozish uchun avval tizimga kiring'}
+                  value={comment}
+                  onChange={(e) => setComment(e.target.value)}
+                  disabled={!currentUser}
+                  rows="3"
+                />
+                <button type="submit" className="btn-send-comment" disabled={!currentUser}>
+                  <Send size={18} />
+                </button>
+              </div>
+            </form>
+            {!currentUser && (
+              <button className="btn-primary login-to-comment" onClick={() => navigate('/login')}>
+                Kirish va fikr yozish
+              </button>
+            )}
+            {showSparkles && <div className="rating-success animate-pop"><Sparkles size={18} /> Reyting tanlandi</div>}
+          </div>
+          {commentError && <p style={{ color: '#d14343', marginTop: '10px' }}>{commentError}</p>}
           <div className="comments-list">
             {comments.map(c => (
               <div key={c.id} className="comment-item-premium glass-full">
@@ -339,7 +399,7 @@ const ThisPlacePage = () => {
                     <div className="mini-rating">
                         {[...Array(c.rating)].map((_, i) => <Star key={i} size={10} fill="var(--accent-gold)" stroke="var(--accent-gold)" />)}
                     </div>
-                    <span>{c.date}</span>
+                    <span>{formatCommentDate(c.date)}</span>
                   </div>
                 </div>
                 <p>{c.text}</p>
@@ -446,23 +506,10 @@ const ThisPlacePage = () => {
             font-size: 14px;
         }
 
-        .user-rating-section {
-            margin-top: 50px;
-        }
-
-        .rating-card {
-            padding: 40px;
-            border-radius: 30px;
-            text-align: center;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 25px;
-        }
-
         .interactive-stars {
             display: flex;
             gap: 15px;
+            flex-wrap: wrap;
         }
 
         .star-btn {
@@ -483,6 +530,63 @@ const ThisPlacePage = () => {
             color: var(--accent-gold);
             font-weight: 800;
             font-size: 18px;
+        }
+
+        .comment-composer {
+            padding: 24px;
+            border-radius: 24px;
+            margin-bottom: 18px;
+        }
+
+        .comment-composer .rating-text {
+            margin-bottom: 14px;
+        }
+
+        .comment-composer .rating-text h4 {
+            margin-bottom: 4px;
+            color: var(--text-dark);
+        }
+
+        .comment-composer .rating-text p {
+            color: var(--text-muted);
+            font-size: 14px;
+        }
+
+        .comment-stars {
+            margin-bottom: 14px;
+        }
+
+        .comment-input-row {
+            display: flex;
+            gap: 12px;
+            align-items: flex-end;
+        }
+
+        .comment-input-row textarea {
+            width: 100%;
+            min-height: 92px;
+            resize: vertical;
+            border: 1px solid var(--glass-border);
+            border-radius: 18px;
+            padding: 14px 16px;
+            background: rgba(255,255,255,0.8);
+            color: var(--text-dark);
+            font: inherit;
+        }
+
+        .comment-input-row textarea:focus {
+            outline: none;
+            border-color: var(--accent-gold);
+            box-shadow: 0 0 0 3px var(--accent-gold-glow);
+        }
+
+        .btn-send-comment:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .login-to-comment {
+            margin-top: 14px;
         }
 
         .comment-item-premium {
@@ -533,6 +637,11 @@ const ThisPlacePage = () => {
         @media (max-width: 768px) {
             .access-grid-premium {
                 grid-template-columns: 1fr;
+            }
+
+            .comment-input-row {
+                flex-direction: column;
+                align-items: stretch;
             }
         }
       `}</style>
