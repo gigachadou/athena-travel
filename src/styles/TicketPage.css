@@ -1,0 +1,357 @@
+.ticket-page {
+  padding: 40px 20px 120px;
+  background: var(--bg-main) !important;
+  display: flex;
+  justify-content: center;
+}
+
+.ticket-shell {
+  width: 100%;
+  max-width: 1024px;
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+}
+
+.ticket-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.ticket-layout-modern {
+  display: grid;
+  grid-template-columns: 350px 1fr;
+  gap: 30px;
+  align-items: start;
+}
+
+.card {
+  border-radius: 20px;
+  padding: 24px;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--shadow-md);
+}
+
+.booking-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.input-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-dark);
+}
+
+.input-shell {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+}
+
+.input-shell input, .input-shell select, .input-shell textarea {
+  width: 100%;
+  border: none;
+  background: transparent;
+  color: var(--text-dark);
+  font-size: 15px;
+  outline: none;
+}
+
+.submit-btn {
+  width: 100%;
+  padding: 16px;
+  border-radius: 16px;
+  font-size: 16px;
+  font-weight: 800;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+}
+
+/* ========================================= */
+/* TRAIN TICKET MATCHING THE IMAGE EXACTLY   */
+/* ========================================= */
+
+.train-ticket {
+  position: relative;
+  display: flex;
+  background: #fbf7f0; /* The cream background */
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08); /* slight soft shadow */
+  font-family: 'Inter', sans-serif; /* Modern sans-serif */
+  color: #1a1a1a;
+  min-height: 280px;
+}
+
+/* The perforation line between left and right blocks */
+.perforation-line {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: 250px; /* Width of right section */
+  width: 2px;
+  border-right: 2px dashed #000;
+  z-index: 10;
+}
+
+.perforation-line .circle {
+  content: "";
+  position: absolute;
+  right: -9px;
+  width: 16px;
+  height: 16px;
+  background: var(--bg-main) !important;
+  border-radius: 50%;
+}
+
+.perforation-line .top { top: -8px; }
+.perforation-line .bottom { bottom: -8px; }
+
+/* Left Section */
+.ticket-left {
+  flex: 1;
+  padding: 0; /* Handled by internal elements */
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Watermark */
+.ticket-watermark {
+  position: absolute;
+  bottom: 0px;
+  left: -20px;
+  width: 60%;
+  height: 60%;
+  background-image: url('https://upload.wikimedia.org/wikipedia/commons/4/41/Steam_locomotive_silhouette.png'); /* Fallback watermark */
+  background-size: cover;
+  background-repeat: no-repeat;
+  opacity: 0.1;
+  pointer-events: none;
+  filter: grayscale(100%);
+}
+
+.ticket-header-strip {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-right: 20px;
+}
+
+.blue-banner {
+  background: #0B52C1;
+  color: white;
+  padding: 16px 30px;
+  border-radius: 0 0 40px 0;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  box-shadow: 4px 4px 15px rgba(11, 82, 193, 0.2);
+}
+
+.brand-text {
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.2;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  text-align: right;
+  opacity: 0.9;
+}
+
+.main-title {
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+}
+
+.ticket-class {
+  color: #0B52C1;
+  font-size: 20px;
+  font-weight: 900;
+  letter-spacing: 1px;
+}
+
+/* Center Details */
+.ticket-body {
+  padding: 10px 40px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.passenger-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.meta-label {
+  font-size: 11px;
+  color: #555;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.passenger-name {
+  font-size: 22px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.route-info {
+  display: flex;
+  gap: 60px;
+}
+
+.route-info .meta-value, .details-row .meta-value {
+  font-size: 16px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.details-row {
+  display: flex;
+  gap: 30px;
+  align-items: flex-end;
+}
+
+.barcode-block {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  margin-top: 10px;
+}
+
+.barcode-lines {
+  display: flex;
+  align-items: flex-end;
+  height: 30px;
+  gap: 2px;
+  margin-bottom: 4px;
+}
+
+.barcode-lines span {
+  width: 4px;
+  background: #111;
+  height: 100%;
+}
+.barcode-lines span:nth-child(even) { width: 2px; height: 80%; }
+.barcode-lines span:nth-child(3n) { width: 6px; }
+
+.barcode-block small {
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 2px;
+}
+
+/* Right Section */
+.ticket-right {
+  width: 250px;
+  padding: 30px 20px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  position: relative;
+}
+
+.right-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.right-row {
+  display: flex;
+  font-size: 12px;
+}
+
+.right-row span {
+  width: 70px;
+  color: #333;
+  font-weight: 600;
+}
+.right-row div {
+  font-weight: 800;
+  color: #111;
+  text-transform: uppercase;
+}
+
+.blue-bottom {
+  position: absolute;
+  bottom: 10px;
+  left: 10px;
+  right: -10px; /* extends slightly out if we want, or flush */
+  background: #0B52C1;
+  color: white;
+  padding: 12px;
+  border-radius: 20px 0 0 20px;
+  text-align: center;
+  font-weight: 800;
+  font-size: 18px;
+  letter-spacing: 1px;
+}
+
+.vertical-brand {
+  position: absolute;
+  right: -55px; /* adjust based on width */
+  top: 50%;
+  transform: translateY(-50%) rotate(270deg);
+  white-space: nowrap;
+  font-size: 10px;
+  font-weight: 700;
+  color: #888;
+  letter-spacing: 2px;
+}
+
+/* Status Chip */
+.status-chip {
+  padding: 6px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 800;
+  border: 1px solid var(--glass-border);
+}
+.status-chip.ok { background: #dcfce7; color: #166534; border-color: #bbf7d0; }
+.status-chip.pending { background: #e0e7ff; color: #3730a3; border-color: #c7d2fe; }
+
+@media (max-width: 900px) {
+  .ticket-layout-modern {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 600px) {
+  .train-ticket {
+    flex-direction: column;
+  }
+  .perforation-line { display: none; }
+  .ticket-right {
+    width: 100%;
+    border-top: 2px dashed #000;
+    padding-bottom: 80px;
+  }
+  .blue-bottom {
+    border-radius: 20px;
+    right: 10px;
+  }
+}

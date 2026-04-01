@@ -5,6 +5,8 @@ import RegisterPage from './pages/RegisterPage'
 import OTPPage from './pages/OTPPage'
 import HomePage from './pages/HomePage'
 import SearchPage from './pages/SearchPage'
+import TicketsListPage from './pages/TicketsListPage'
+import TicketPage from './pages/TicketPage'
 import AIPage from './pages/AIPage'
 import MapPage from './pages/MapPage'
 import ProfilePage from './pages/ProfilePage'
@@ -34,6 +36,9 @@ function App() {
           <Route path="/" element={<HomePage />} />
           <Route path="/search" element={<SearchPage />} />
           <Route path="/ai" element={<AIPage />} />
+          <Route path="/tickets" element={<TicketsListPage />} />
+          <Route path="/ticket/:id" element={<TicketPage />} />
+          <Route path="/ticket/:placeId/:ticketId" element={<TicketPage />} />
           <Route path="/map" element={<MapPage />} />
           <Route path="/profile" element={<PrivateRoute><ProfilePage /></PrivateRoute>} />
           <Route path="/place/:id" element={<ThisPlacePage />} />
