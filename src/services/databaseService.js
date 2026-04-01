@@ -34,6 +34,26 @@ export const normalizePlace = (row) => ({
   ratingCount: Number(row.rating_count ?? 0),
 })
 
+export const normalizePlaceAiText = (row) => {
+  if (!row) return null
+
+  return {
+    locale: row.locale || 'uz',
+    summary: row.summary || '',
+    mustVisitLabel: row.must_visit_label || '',
+    locationInfoTitle: row.location_info_title || '',
+    historicalInfoTitle: row.historical_info_title || '',
+    pricingNote: row.pricing_note || '',
+    reviewTitle: row.review_title || '',
+    reviewSubtitle: row.review_subtitle || '',
+    commentPlaceholderAuth: row.comment_placeholder_auth || '',
+    commentPlaceholderGuest: row.comment_placeholder_guest || '',
+    loginToCommentLabel: row.login_to_comment_label || '',
+    ratingSelectedMessage: row.rating_selected_message || '',
+    extra: row.extra || {},
+  }
+}
+
 export const fetchPlaces = async () => {
   const { data, error } = await supabase
     .from('places')
@@ -53,6 +73,23 @@ export const fetchPlaceById = async (id) => {
 
   if (error) throw error
   return data ? normalizePlace(data) : null
+}
+
+export const fetchPlaceAiText = async (placeId, locale = 'uz') => {
+  const preferredLocale = locale === 'uz' ? 'uz' : 'en'
+  const fallbackLocales = preferredLocale === 'uz' ? ['uz', 'en'] : ['en', 'uz']
+
+  const { data, error } = await supabase
+    .from('place_ai_texts')
+    .select('*')
+    .eq('place_id', placeId)
+    .in('locale', fallbackLocales)
+
+  if (error) throw error
+  if (!data?.length) return null
+
+  const exactMatch = data.find((item) => item.locale === preferredLocale)
+  return normalizePlaceAiText(exactMatch || data[0])
 }
 
 export const fetchCommentsByPlaceId = async (placeId) => {

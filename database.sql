@@ -43,6 +43,31 @@ create table if not exists public.places (
   created_at timestamp with time zone default timezone('utc'::text, now())
 );
 
+-- PLACE AI TEXTS (AI yozgan matnlar)
+create table if not exists public.place_ai_texts (
+  id uuid default uuid_generate_v4() primary key,
+  place_id uuid references public.places(id) on delete cascade not null,
+  locale text not null default 'uz',
+  summary text not null,
+  must_visit_label text,
+  location_info_title text,
+  historical_info_title text,
+  pricing_note text,
+  review_title text,
+  review_subtitle text,
+  comment_placeholder_auth text,
+  comment_placeholder_guest text,
+  login_to_comment_label text,
+  rating_selected_message text,
+  source text default 'ai',
+  model_name text,
+  prompt_version text,
+  extra jsonb not null default '{}'::jsonb,
+  created_at timestamp with time zone default timezone('utc'::text, now()),
+  updated_at timestamp with time zone default timezone('utc'::text, now()),
+  unique(place_id, locale)
+);
+
 -- COMMENTS (Fikrlar va Reytinglar)
 create table if not exists public.comments (
   id uuid default uuid_generate_v4() primary key,
@@ -93,6 +118,19 @@ create trigger on_auth_user_created
   after insert on auth.users
   for each row execute procedure public.handle_new_user();
 
+create or replace function public.set_updated_at()
+returns trigger as $$
+begin
+  new.updated_at = timezone('utc'::text, now());
+  return new;
+end;
+$$ language plpgsql;
+
+drop trigger if exists set_place_ai_texts_updated_at on public.place_ai_texts;
+create trigger set_place_ai_texts_updated_at
+  before update on public.place_ai_texts
+  for each row execute procedure public.set_updated_at();
+
 -- Average Rating ni hisoblash funksiyasi
 create or replace function update_average_rating()
 returns trigger as $$
@@ -114,6 +152,7 @@ create trigger on_comment_added
 
 alter table public.profiles enable row level security;
 alter table public.places enable row level security;
+alter table public.place_ai_texts enable row level security;
 alter table public.comments enable row level security;
 alter table public.favorites enable row level security;
 
@@ -124,6 +163,9 @@ create policy "Users can update own profile" on profiles for update using (auth.
 
 -- Places: Hamma ko'rishi mumkin, lekin faqat Admin o'zgartira oladi (Hozircha hamma select qilishi mumkin)
 create policy "Places are viewable by everyone" on places for select using (true);
+
+-- Place AI texts: Hamma ko'rishi mumkin
+create policy "Place AI texts are viewable by everyone" on place_ai_texts for select using (true);
 
 -- Comments: Hamma ko'rishi mumkin, faqat login qilganlar yoza oladi, faqat o'zi o'chira oladi
 create policy "Comments are viewable by everyone" on comments for select using (true);
@@ -144,3 +186,41 @@ values
 ('Sultan Saodat Ensemble', 'Termez District', 'Seyidlar sulolasining bir necha asrlik maqbaralar majmuasi.', 'https://visitsilkroad.org/wp-content/uploads/2022/03/Termez-Sultan-Saodat-Ensemble-Uzbekistan2.jpg', 10000, 'historical', 'termez', '3.5 km', '{Guide,History}', 'Autumn', 'Easy', '1-2 Hours'),
 ('Sangardak Waterfall', 'Sariosiyo District', 'O''zbekistonning eng baland va go''zal sharsharalaridan biri.', 'https://www.advantour.com/img/uzbekistan/termez/sangardak-waterfall/sangardak-waterfall2.jpg', 20000, 'nature', 'sariosiyo', '205 km', '{Nature,Food,Photo Ops}', 'Summer', 'Medium', 'Full Day'),
 ('Fayaz-Tepa Monastery', 'Old Termez', 'Kushonlar davriga oid qadimiy Buddaviylik monastiri.', 'https://images.unsplash.com/photo-1548013146-72479768bbaa?w=800', 25000, 'historical', 'termez', '15 km', '{Museum,Guide,History}', 'Spring', 'Easy', '1-2 Hours');
+
+insert into public.place_ai_texts (
+  place_id,
+  locale,
+  summary,
+  must_visit_label,
+  location_info_title,
+  historical_info_title,
+  pricing_note,
+  review_title,
+  review_subtitle,
+  comment_placeholder_auth,
+  comment_placeholder_guest,
+  login_to_comment_label,
+  rating_selected_message,
+  source,
+  model_name,
+  prompt_version
+)
+select
+  p.id,
+  'uz',
+  p.description,
+  'AI tavsiya',
+  'Joylashuv ma''lumotlari',
+  'Tarixiy ma''lumot',
+  '* Narxlar bir kecha uchun ko''rsatilgan',
+  'Baholang va fikr qoldiring',
+  'Reyting va izoh birga yuboriladi.',
+  'Fikringizni yozing...',
+  'Fikr yozish uchun avval tizimga kiring',
+  'Kirish va fikr yozish',
+  'Reyting tanlandi',
+  'seed',
+  'manual',
+  'v1'
+from public.places p
+on conflict (place_id, locale) do nothing;
