@@ -1,14 +1,19 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { Search as SearchIcon, Filter, X } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import PostCard from '../components/PostCard'
 import SidebarFilter from '../components/SidebarFilter'
-import { SURKHANDARYA_POSTS } from '../data/posts'
 import '../styles/SearchPage.css'
+import Loading from '../components/Loading'
+import { fetchPlaces } from '../services/databaseService'
+import { filterPlaces } from '../utils/placeFilters'
 
 const SearchPage = () => {
   const [query, setQuery] = useState('')
   const [isFilterOpen, setIsFilterOpen] = useState(false)
+  const [places, setPlaces] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
   const [filters, setFilters] = useState({
     region: '',
     priceRange: 10000000,
@@ -24,29 +29,30 @@ const SearchPage = () => {
     setFilters(prev => ({ ...prev, ...newFilters }))
   }
 
-  const filteredPosts = SURKHANDARYA_POSTS.filter(post => {
-    const matchesSearch = post.title.toLowerCase().includes(query.toLowerCase()) || 
-                          post.location.toLowerCase().includes(query.toLowerCase())
-    
-    const matchesRegion = !filters.region || post.region === filters.region
-    const matchesPrice = parseInt(post.price.replace(/,/g, '').replace(' UZS', '')) <= filters.priceRange
-    const matchesRating = post.rating >= filters.rating
-    
-    const catMap = {
-        'Mountains': 'nature',
-        'Historical': 'historical',
-        'Hotels': 'hotels',
-        'Restaurants': 'restaurants'
-    }
-    const mappedCategories = filters.categories.map(c => catMap[c] || c)
-    const matchesCategory = filters.categories.length === 0 || mappedCategories.includes(post.type)
-    
-    const matchesSeason = !filters.bestSeason || post.bestSeason === filters.bestSeason || post.bestSeason === 'All'
-    const matchesDifficulty = !filters.difficulty || post.difficulty === filters.difficulty
-    const matchesAmenities = filters.amenities.length === 0 || filters.amenities.every(a => post.amenities?.includes(a))
+  useEffect(() => {
+    const loadPlaces = async () => {
+      setLoading(true)
+      setError('')
 
-    return matchesSearch && matchesRegion && matchesPrice && matchesRating && matchesCategory && matchesSeason && matchesDifficulty && matchesAmenities
-  })
+      try {
+        const data = await fetchPlaces()
+        setPlaces(data)
+      } catch (err) {
+        console.error('Failed to load places:', err)
+        setError("Joylarni yuklab bo'lmadi.")
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    loadPlaces()
+  }, [])
+
+  const filteredPosts = filterPlaces(places, query, filters)
+
+  if (loading) {
+    return <Loading fullPage message={t('loading')} />
+  }
 
   return (
     <div className="search-page fade-in">
@@ -106,8 +112,8 @@ const SearchPage = () => {
         </div>
         {filteredPosts.length === 0 && (
           <div className="empty-state-search glass animate-up">
-             <h3>{t('no_results')}</h3>
-             <p>Qidiruv parametrlarini o'zgartirib ko'ring</p>
+             <h3>{error || t('no_results')}</h3>
+             <p>{error ? "Supabase ma'lumotlarini tekshirib ko'ring." : "Qidiruv parametrlarini o'zgartirib ko'ring"}</p>
           </div>
         )}
       </div>

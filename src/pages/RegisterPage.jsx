@@ -1,21 +1,52 @@
 import React, { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
-import { User, Phone, Globe, ChevronRight, Sparkles } from 'lucide-react'
+import { User, Mail, Lock, ChevronRight, Sparkles } from 'lucide-react'
 
 import '../styles/AuthPage.css'
+import { useAuth } from '../context/AuthContext'
 
 const RegisterPage = () => {
   const [formData, setFormData] = useState({
-    firstName: '',
-    lastName: '',
-    country: '',
-    phone: ''
+    username: '',
+    fullName: '',
+    email: '',
+    password: '',
+    confirmPassword: '',
   })
+  const [error, setError] = useState('')
+  const [submitting, setSubmitting] = useState(false)
   const navigate = useNavigate()
+  const { register } = useAuth()
 
-  const handleRegister = (e) => {
+  const handleRegister = async (e) => {
     e.preventDefault()
-    if (formData.phone) navigate('/otp')
+    if (!formData.username || !formData.fullName || !formData.email || !formData.password) return
+    if (formData.password !== formData.confirmPassword) {
+      setError('Parollar bir xil emas.')
+      return
+    }
+
+    try {
+      setSubmitting(true)
+      setError('')
+      const result = await register({
+        username: formData.username.trim(),
+        fullName: formData.fullName.trim(),
+        email: formData.email.trim(),
+        password: formData.password,
+      })
+
+      if (result.session) {
+        navigate('/', { replace: true })
+      } else {
+        navigate('/otp', { replace: true, state: { email: formData.email.trim() } })
+      }
+    } catch (err) {
+      console.error('Failed to register:', err)
+      setError(err.message || "Ro'yxatdan o'tib bo'lmadi.")
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   const handleChange = (e) => {
@@ -32,57 +63,66 @@ const RegisterPage = () => {
         <p className="auth-subtitle">Premium platformaga qo'shiling va barcha imkoniyatlardan foydalaning</p>
         
         <form onSubmit={handleRegister} className="auth-form">
-          <div className="input-group-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
-            <div className="input-field">
-                <User className="field-icon" size={20} />
-                <input 
-                type="text" 
-                name="firstName"
-                placeholder="Ism" 
-                value={formData.firstName}
-                onChange={handleChange}
-                required
-                />
-            </div>
-            <div className="input-field">
-                <User className="field-icon" size={20} />
-                <input 
-                type="text" 
-                name="lastName"
-                placeholder="Familiya" 
-                value={formData.lastName}
-                onChange={handleChange}
-                required
-                />
-            </div>
-          </div>
-          
           <div className="input-field">
-            <Globe className="field-icon" size={20} />
+            <User className="field-icon" size={20} />
             <input 
               type="text" 
-              name="country"
-              placeholder="Davlat" 
-              value={formData.country}
+              name="username"
+              placeholder="Username"
+              value={formData.username}
               onChange={handleChange}
               required
             />
           </div>
           <div className="input-field">
-            <Phone className="field-icon" size={20} />
+            <User className="field-icon" size={20} />
             <input 
-              type="tel" 
-              name="phone"
-              placeholder="Telefon raqam" 
-              value={formData.phone}
+              type="text" 
+              name="fullName"
+              placeholder="Ism familiya" 
+              value={formData.fullName}
+              onChange={handleChange}
+              required
+            />
+          </div>
+          <div className="input-field">
+            <Mail className="field-icon" size={20} />
+            <input 
+              type="email" 
+              name="email"
+              placeholder="Email" 
+              value={formData.email}
+              onChange={handleChange}
+              required
+            />
+          </div>
+          <div className="input-field">
+            <Lock className="field-icon" size={20} />
+            <input 
+              type="password" 
+              name="password"
+              placeholder="Parol"
+              value={formData.password}
+              onChange={handleChange}
+              required
+            />
+          </div>
+          <div className="input-field">
+            <Lock className="field-icon" size={20} />
+            <input 
+              type="password" 
+              name="confirmPassword"
+              placeholder="Parolni tasdiqlang"
+              value={formData.confirmPassword}
               onChange={handleChange}
               required
             />
           </div>
           <button type="submit" className="btn-primary auth-btn">
-            Ro'yxatdan o'tish <ChevronRight size={18} />
+            {submitting ? "Yuborilmoqda..." : <>Ro'yxatdan o'tish <ChevronRight size={18} /></>}
           </button>
         </form>
+        {error && <p style={{ color: '#d14343', marginTop: '14px' }}>{error}</p>}
         
         <p className="auth-footer">
           Akkountingiz bormi? <Link to="/login">Kiring</Link>
