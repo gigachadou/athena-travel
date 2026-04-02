@@ -24,3 +24,4 @@ values
 ('Termiz arxeologiya muzeyi', 'Termiz shahri', 'Surxondaryo tarixiga oid nodir topilmalar jamlangan zamonaviy muzey.', 'https://images.unsplash.com/photo-1518998053901-5348d3961a04?w=1200', 18000, 'historical', 'termez', '7 km', '{Muzey,Gid,Tarix}', 'Barcha fasllar', 'Oson', '1-2 soat'),
 ('Kampirtepa xarobalari', 'Amudaryo bo''yi', 'Ellinistik davrga oid qadimiy shahar xarobalari bilan mashhur arxeologik maydon.', 'https://upload.wikimedia.org/wikipedia/commons/2/2d/Kampyrtepa.jpg', 24000, 'historical', 'termez', '30 km', '{Gid,Tarix,Suratga olish}', 'Bahor', 'O''rta', '2-3 soat'),
 ('Omonxona buloq hududi', 'Boysun etaklari', 'Toza buloq suvi, salqin havo va qisqa sayrlar uchun yoqimli dam olish hududi.', 'https://images.unsplash.com/photo-1502082553048-f009c37129b9?w=1200', 14000, 'nature', 'boysun', '138 km', '{Tabiat,Piknik,Oila uchun qulay}', 'Yoz', 'Oson', '1-2 soat');
+    

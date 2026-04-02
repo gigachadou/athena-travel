@@ -66,20 +66,22 @@ export const AuthProvider = ({ children }) => {
       try {
         const { data, error } = await supabase.auth.getSession()
         if (error) throw error
-        if (!mounted) return
+        if (!active) return
 
-        await updateAuthState(data.session)
+        const nextSession = data.session ?? null
+        setSession(nextSession)
+        await hydrateUser(nextSession?.user ?? null)
       } catch (error) {
         console.error('Failed to restore Supabase session:', error)
-        if (mounted) {
+        if (active) {
           setAuthError('Supabase sessiyasi tiklanmadi: ' + (error?.message || 'noma’lum xato'))
         }
       } finally {
-        if (mounted) setLoading(false)
+        if (active) setLoading(false)
       }
     }
 
-    restoreSession()
+    init()
 
     const {
       data: { subscription },
@@ -97,7 +99,6 @@ export const AuthProvider = ({ children }) => {
 
     return () => {
       active = false
-      clearAuthTimeout()
       subscription.unsubscribe()
     }
   }, [])
