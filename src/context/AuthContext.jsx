@@ -60,6 +60,28 @@ export const AuthProvider = ({ children }) => {
     }
 
     let active = true
+    let initialized = false
+
+    const handleSessionUpdate = async (nextSession) => {
+      if (!active) return
+      setSession(nextSession ?? null)
+      try {
+        await hydrateUser(nextSession?.user ?? null)
+      } catch (error) {
+        console.error('Failed to hydrate authenticated user:', error)
+      }
+      if (!initialized) {
+        initialized = true
+        setLoading(false)
+      }
+    }
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (_event, nextSession) => {
+      if (!active) return
+      await handleSessionUpdate(nextSession)
+    })
 
     const init = async () => {
       try {
@@ -67,30 +89,18 @@ export const AuthProvider = ({ children }) => {
         if (error) throw error
         if (!active) return
 
-        setSession(data.session ?? null)
-        await hydrateUser(data.session?.user ?? null)
+        await handleSessionUpdate(data.session)
       } catch (error) {
         console.error('Failed to restore Supabase session:', error)
       } finally {
-        if (active) setLoading(false)
+        if (!initialized && active) {
+          initialized = true
+          setLoading(false)
+        }
       }
     }
 
     init()
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (_event, nextSession) => {
-      if (!active) return
-      setSession(nextSession ?? null)
-      try {
-        await hydrateUser(nextSession?.user ?? null)
-      } catch (error) {
-        console.error('Failed to hydrate authenticated user:', error)
-      } finally {
-        if (active) setLoading(false)
-      }
-    })
 
     return () => {
       active = false

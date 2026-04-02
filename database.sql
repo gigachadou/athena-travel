@@ -32,30 +32,39 @@ create table if not exists public.places (
   created_at timestamp with time zone default timezone('utc'::text, now())
 );
 
--- TICKETS 
-create table public.tickets (
-  id uuid default gen_random_uuid() primary key,
-  user_id uuid references auth.users(id) on delete cascade not null,
-  place_id text not null,
-  place_title text not null,
+-- 1. TICKETS
+CREATE TABLE IF NOT EXISTS public.tickets (
+  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  ticket_id text UNIQUE NOT NULL, -- Elektron chipta ID (AF-123456)
+  user_id uuid REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL, -- Foydalanuvchi bilan bog'lash
+  place_id text NOT NULL,
+  place_title text NOT NULL,
   place_location text,
   ticket_type text,
-  guests integer default 1,
-  date date not null,
-  passenger_name text not null,
+  guests integer DEFAULT 1,
+  date date NOT NULL,
+  passenger_name text NOT NULL,
   passenger_phone text,
   passenger_email text,
-  status text default 'confirmed',
-  total_price numeric not null,
-  seat text,
-  train text,
-  coach text,
-  platform text,
-  depart_time text,
-  arrival_time text,
-  ticket_class text,
-  qr_code text,
-  created_at timestamp with time zone default timezone('utc'::text, now()) not null
+  
+  -- ID / Pasport ma'lumotlari (MAJBURIY)
+  passport_number text NOT NULL,
+  birth_date date NOT NULL,
+  gender text,
+  
+  -- Transport va joylashuv ma'lumotlari
+  status text DEFAULT 'checking', -- checking, confirmed, completed, rejected
+  total_price numeric NOT NULL,
+  seat text,         -- O'rindiq (S-45)
+  train text,        -- Reys yoki Poezd raqami (REG-120)
+  coach text,        -- Vagon raqami
+  platform text,     -- Platforma raqami
+  depart_time text,  -- Ketish vaqti
+  arrival_time text, -- Kelish vaqti
+  ticket_class text, -- Klass raqami (Economy/First)
+  qr_code_data text, -- QR kod tarkibi uchun
+  
+  created_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
 
@@ -240,11 +249,23 @@ create policy "Users can delete own favorites" on favorites for delete using (au
 
 -- Tickets: Faqat o'zining chiptalarini ko'radi va boshqaradi
 drop policy if exists "Users can view their own tickets" on public.tickets;
-drop policy if exists "Users can insert their own tickets" on public.tickets;
-drop policy if exists "Users can update their own tickets" on public.tickets;
-create policy "Users can view their own tickets" on public.tickets for select using ( auth.uid() = user_id );
-create policy "Users can insert their own tickets" on public.tickets for insert with check ( auth.uid() = user_id );
-create policy "Users can update their own tickets" on public.tickets for update using ( auth.uid() = user_id );
+drop policy if exists "Users can create their own tickets" on public.tickets;
+drop policy if exists "Users can delete their own pending tickets" on public.tickets;
+-- Foydalanuvchi faqat o'ziga tegishli chiptalarni ko'rishi mumkin
+CREATE POLICY "Users can view their own tickets" ON public.tickets FOR SELECT USING (auth.uid() = user_id);
+-- Foydalanuvchi faqat o'ziga chipta yarata oladi
+CREATE POLICY "Users can create their own tickets" ON public.tickets FOR INSERT WITH CHECK (auth.uid() = user_id);
+-- Foydalanuvchi o'z chiptasini o'chira oladi (faqat kutilayotganlarni)
+CREATE POLICY "Users can delete their own pending tickets" ON public.tickets FOR DELETE USING (auth.uid() = user_id AND status = 'checking');
+
+
+CREATE INDEX IF NOT EXISTS tickets_user_id_idx ON public.tickets(user_id);
+CREATE INDEX IF NOT EXISTS tickets_ticket_id_idx ON public.tickets(ticket_id);
+
+-- MAJBURIY: PostgREST keshini yangilash (Colum not found xatosini oldini olish uchun)
+NOTIFY pgrst, 'reload schema';
+
+COMMENT ON TABLE public.tickets IS 'Travel ticketing system with passport mandatory requirements and realistic transport details.';
 
 grant execute on function public.find_user_by_username(text) to anon, authenticated;
 grant execute on function public.get_comments_with_user_metadata(uuid) to anon, authenticated;
