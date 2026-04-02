@@ -60,27 +60,9 @@ export const AuthProvider = ({ children }) => {
       return undefined
     }
 
-    let mounted = true
-    let subscription = null
+    let active = true
 
-    const updateAuthState = async (nextSession) => {
-      if (!mounted) return
-
-      setSession(nextSession ?? null)
-      if (!nextSession?.user) {
-        setUser(null)
-        setProfile(null)
-        return
-      }
-
-      try {
-        await hydrateUser(nextSession.user)
-      } catch (error) {
-        console.error('Failed to hydrate authenticated user:', error)
-      }
-    }
-
-    const restoreSession = async () => {
+    const init = async () => {
       try {
         const { data, error } = await supabase.auth.getSession()
         if (error) throw error
@@ -99,17 +81,24 @@ export const AuthProvider = ({ children }) => {
 
     restoreSession()
 
-    const result = supabase.auth.onAuthStateChange(async (event, nextSession) => {
-      if (!mounted) return
-      if (event === 'INITIAL_SESSION') return
-      await updateAuthState(nextSession)
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (_event, nextSession) => {
+      if (!active) return
+      setSession(nextSession ?? null)
+      try {
+        await hydrateUser(nextSession?.user ?? null)
+      } catch (error) {
+        console.error('Failed to hydrate authenticated user:', error)
+      } finally {
+        if (active) setLoading(false)
+      }
     })
 
-    subscription = result.data?.subscription
-
     return () => {
-      mounted = false
-      subscription?.unsubscribe()
+      active = false
+      clearAuthTimeout()
+      subscription.unsubscribe()
     }
   }, [])
 

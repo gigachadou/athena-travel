@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
-import { User, Mail, Lock, ChevronRight, Sparkles } from 'lucide-react'
+import { User, Mail, Lock, ChevronRight, Sparkles, ChevronLeft } from 'lucide-react'
 
 import '../styles/AuthPage.css'
 import { useAuth } from '../context/AuthContext'
@@ -55,18 +55,21 @@ const RegisterPage = () => {
 
   return (
     <div className="auth-page fade-in">
+      <button className="btn-back-auth" onClick={() => navigate(-1)} aria-label="Ortga">
+        <ChevronLeft size={24} />
+      </button>
       <div className="auth-card">
         <div className="auth-logo">
-            <Sparkles size={32} color="var(--primary-blue)" />
+          <Sparkles size={32} color="var(--primary-blue)" />
         </div>
         <h1 className="auth-title">Ro'yxatdan o'tish</h1>
         <p className="auth-subtitle">Premium platformaga qo'shiling va barcha imkoniyatlardan foydalaning</p>
-        
+
         <form onSubmit={handleRegister} className="auth-form">
           <div className="input-field">
             <User className="field-icon" size={20} />
-            <input 
-              type="text" 
+            <input
+              type="text"
               name="username"
               placeholder="Username"
               value={formData.username}
@@ -76,10 +79,10 @@ const RegisterPage = () => {
           </div>
           <div className="input-field">
             <User className="field-icon" size={20} />
-            <input 
-              type="text" 
+            <input
+              type="text"
               name="fullName"
-              placeholder="Ism familiya" 
+              placeholder="Ism familiya"
               value={formData.fullName}
               onChange={handleChange}
               required
@@ -87,10 +90,10 @@ const RegisterPage = () => {
           </div>
           <div className="input-field">
             <Mail className="field-icon" size={20} />
-            <input 
-              type="email" 
+            <input
+              type="email"
               name="email"
-              placeholder="Email" 
+              placeholder="Email"
               value={formData.email}
               onChange={handleChange}
               required
@@ -98,8 +101,8 @@ const RegisterPage = () => {
           </div>
           <div className="input-field">
             <Lock className="field-icon" size={20} />
-            <input 
-              type="password" 
+            <input
+              type="password"
               name="password"
               placeholder="Parol"
               value={formData.password}
@@ -109,8 +112,8 @@ const RegisterPage = () => {
           </div>
           <div className="input-field">
             <Lock className="field-icon" size={20} />
-            <input 
-              type="password" 
+            <input
+              type="password"
               name="confirmPassword"
               placeholder="Parolni tasdiqlang"
               value={formData.confirmPassword}
@@ -123,7 +126,7 @@ const RegisterPage = () => {
           </button>
         </form>
         {error && <p style={{ color: '#d14343', marginTop: '14px' }}>{error}</p>}
-        
+
         <p className="auth-footer">
           Akkountingiz bormi? <Link to="/login">Kiring</Link>
         </p>

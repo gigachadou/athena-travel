@@ -20,7 +20,6 @@ import {
   Lock
 } from 'lucide-react'
 import { QRCodeSVG } from 'qrcode.react'
-import { SURKHANDARYA_POSTS } from '../data/posts'
 import { formatDatePretty, parsePriceToNumber } from '../utils/tickets'
 import { useAuth } from '../context/AuthContext'
 import { createTicketInDB, fetchPlaceById, fetchUserTicketById, formatPrice } from '../services/databaseService'
@@ -56,8 +55,7 @@ const TicketPage = () => {
   // Load place and ticket info
   const place = useMemo(() => {
     if (remotePlace) return remotePlace
-    const fromList = SURKHANDARYA_POSTS.find(p => String(p.id) === String(id))
-    return location.state?.place || fromList || null
+    return location.state?.place || null
   }, [id, location.state, remotePlace])
 
   useEffect(() => {
@@ -152,6 +150,14 @@ const TicketPage = () => {
         birth_date: form.birthDate,
         gender: form.gender,
         total_price: totalPrice,
+        
+        // Payment Metadata
+        payment_status: 'paid',
+        payment_method: 'card',
+        card_last4: cardData.number.replace(/\s/g, '').slice(-4),
+        transaction_id: `TRX-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+        payment_at: new Date().toISOString(),
+
         status: 'checking',
         seat: `S${Math.floor(Math.random() * 50) + 1}`,
         train: `REG-${Math.floor(Math.random() * 900) + 100}`,

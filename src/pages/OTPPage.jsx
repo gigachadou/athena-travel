@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { useNavigate, useLocation, Link } from 'react-router-dom'
-import { ArrowLeft, MailCheck } from 'lucide-react'
+import { ChevronLeft, MailCheck } from 'lucide-react'
 
 import '../styles/AuthPage.css'
 import { resendSignupConfirmation } from '../services/databaseService'
@@ -33,10 +33,10 @@ const OTPPage = () => {
 
   return (
     <div className="auth-page fade-in">
-      <div className="auth-card" style={{ position: 'relative' }}>
-        <button onClick={() => navigate(-1)} className="btn-back-circle" style={{ position: 'absolute', top: '25px', left: '25px', width: '44px', height: '44px', borderRadius: '50%', background: 'var(--accent-blue)', color: 'var(--primary-blue)' }}>
-          <ArrowLeft size={20} />
-        </button>
+      <button className="btn-back-auth" onClick={() => navigate(-1)} aria-label="Ortga">
+        <ChevronLeft size={24} />
+      </button>
+      <div className="auth-card">
         
         <div className="auth-logo">
           <MailCheck size={40} color="var(--primary-blue)" />

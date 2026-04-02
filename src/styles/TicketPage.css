@@ -1,47 +1,96 @@
+/* ─── Ticket Page Base ─────────────────────────────────────────────────── */
 .ticket-page {
-  padding: 100px 20px 60px;
+  padding: 40px 20px 100px;
   min-height: 100vh;
-  background: radial-gradient(circle at 10% 10%, rgba(255, 180, 0, 0.05) 0%, transparent 40%),
-              radial-gradient(circle at 90% 90%, rgba(12, 168, 255, 0.05) 0%, transparent 40%);
+  background: var(--bg-color);
+  position: relative;
+  overflow-x: hidden;
 }
 
+.ticket-shell {
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+/* ─── Booking Layout ────────────────────────────────────────────────────── */
 .booking-layout {
   display: grid;
-  grid-template-columns: 1fr 380px;
-  gap: 30px;
+  grid-template-columns: 1fr 360px;
+  gap: 40px;
   align-items: start;
 }
 
-/* Stepper */
+@media (max-width: 992px) {
+  .booking-layout {
+    grid-template-columns: 1fr;
+  }
+  .booking-sidebar {
+    display: none;
+  }
+}
+
+/* ─── Header & Stepper ──────────────────────────────────────────────────── */
+.booking-header {
+  margin-bottom: 30px;
+}
+
+.btn-back-link {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-weight: 700;
+  cursor: pointer;
+  margin-bottom: 15px;
+  padding: 0;
+  transition: var(--transition);
+}
+
+.btn-back-link:hover {
+  color: var(--accent-gold);
+}
+
+.booking-title {
+  font-size: 32px;
+  margin-bottom: 10px;
+  background: linear-gradient(135deg, var(--text-dark), var(--accent-gold));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
 .booking-stepper-premium {
   display: flex;
   align-items: center;
-  gap: 15px;
+  gap: 10px;
   margin-bottom: 40px;
   background: var(--glass-card);
-  padding: 20px 30px;
-  border-radius: 24px;
+  padding: 15px 25px;
+  border-radius: 20px;
   border: 1px solid var(--glass-border);
 }
 
 .step-item {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
+  font-size: 13px;
+  font-weight: 800;
   color: var(--text-muted);
-  font-weight: 700;
-  font-size: 14px;
+  transition: var(--transition);
 }
 
 .step-icon {
-  width: 38px;
-  height: 38px;
-  border-radius: 12px;
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
   background: rgba(0,0,0,0.05);
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.4s ease;
 }
 
 .step-item.active {
@@ -51,15 +100,15 @@
 .step-item.active .step-icon {
   background: var(--accent-gold);
   color: #0f172a;
-  box-shadow: 0 0 20px var(--accent-gold-glow);
+  box-shadow: 0 0 15px var(--accent-gold-glow);
 }
 
 .step-item.completed {
-  color: #16a34a;
+  color: #10b981;
 }
 
 .step-item.completed .step-icon {
-  background: #16a34a;
+  background: #10b981;
   color: white;
 }
 
@@ -67,354 +116,393 @@
   flex: 1;
   height: 2px;
   background: var(--glass-border);
+  opacity: 0.5;
 }
 
-/* Holographic Ticket */
+/* ─── Form Container ────────────────────────────────────────────────────── */
+.booking-container {
+  padding: 35px;
+  border-radius: 32px;
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--shadow-lg);
+}
+
+.step-header {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  margin-bottom: 25px;
+}
+
+.icon-badge-gold {
+  width: 48px;
+  height: 48px;
+  background: var(--accent-gold-glow);
+  color: var(--accent-gold);
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+}
+
+.input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.input-group.full-width {
+  grid-column: span 2;
+}
+
+.input-group label {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-dark);
+  margin-left: 5px;
+}
+
+.input-with-icon {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input-with-icon svg {
+  position: absolute;
+  left: 15px;
+  color: var(--text-muted);
+  pointer-events: none;
+}
+
+.input-with-icon input,
+.input-with-icon select {
+  width: 100%;
+  padding: 14px 15px 14px 45px;
+  border-radius: 16px;
+  border: 1.5px solid var(--glass-border);
+  background: rgba(255, 255, 255, 0.7);
+  font-size: 15px;
+  font-weight: 600;
+  font-family: inherit;
+  transition: var(--transition);
+}
+
+.input-with-icon input:focus {
+  outline: none;
+  border-color: var(--accent-gold);
+  background: white;
+  box-shadow: 0 0 0 4px var(--accent-gold-glow);
+}
+
+.input-hint {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+
+/* ─── Holographic Ticket ─────────────────────────────────────────────────── */
 .holographic-ticket {
   display: flex;
-  background: white;
+  background: #ffffff;
   border-radius: 35px;
   overflow: hidden;
-  box-shadow: 0 40px 100px rgba(0,0,0,0.15);
+  box-shadow: 0 50px 100px rgba(0,0,0,0.12);
+  margin: 30px 0;
   position: relative;
-  min-height: 480px;
-  margin: 30px 0 50px;
-  transition: transform 0.5s ease;
+  border: 1px solid rgba(0,0,0,0.05);
 }
 
-.holographic-ticket:hover {
-  transform: translateY(-10px) rotateX(2deg);
-}
-
-/* Holographic Sheen Effect */
 .holographic-ticket::after {
   content: '';
   position: absolute;
-  inset: 0;
+  top: 0; left: -100%;
+  width: 60%; height: 100%;
   background: linear-gradient(
-    125deg,
-    transparent 0%,
-    transparent 40%,
-    rgba(255, 255, 255, 0.3) 50%,
-    transparent 60%,
-    transparent 100%
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.4),
+    transparent
   );
-  background-size: 200% 200%;
-  animation: holoSheen 8s infinite linear;
+  transform: skewX(-20deg);
+  animation: shine 8s infinite;
   pointer-events: none;
-  z-index: 5;
 }
 
-@keyframes holoSheen {
-  0% { background-position: -200% -200%; }
-  100% { background-position: 200% 200%; }
+@keyframes shine {
+  0% { left: -100%; }
+  20% { left: 150%; }
+  100% { left: 150%; }
 }
 
 .ticket-main {
   flex: 1;
-  padding: 45px;
+  padding: 40px;
+  border-right: 2px dashed #e2e8f0;
   position: relative;
-  border-right: 3px dashed #f1f5f9;
 }
 
-/* Semi-circular cuts on the dashed line */
-.ticket-main::before, .ticket-main::after {
+/* Decorative circles at dashed line */
+.holographic-ticket::before {
   content: '';
   position: absolute;
-  right: -15px;
+  top: 50%;
+  right: 265px; /* Based on stub width */
+  transform: translateY(-50%);
   width: 30px;
-  height: 30px;
-  background: var(--bg-color);
-  border-radius: 50%;
-  z-index: 2;
-}
-.ticket-main::before { top: -15px; }
-.ticket-main::after { bottom: -15px; }
-
-.ticket-inner {
-  display: flex;
-  flex-direction: column;
   height: 100%;
+  z-index: 10;
+  background-image: 
+    radial-gradient(circle at center top, var(--bg-color) 15px, transparent 15px),
+    radial-gradient(circle at center bottom, var(--bg-color) 15px, transparent 15px);
+  background-position: top center, bottom center;
+  background-repeat: no-repeat;
+  background-size: 30px 15px, 30px 15px;
+  pointer-events: none;
 }
 
 .ticket-header {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 40px;
+  margin-bottom: 30px;
 }
 
 .brand-group {
   display: flex;
   align-items: center;
-  gap: 15px;
-}
-
-.ticket-logo { height: 45px; }
-
-.brand-texts {
-  display: flex;
-  flex-direction: column;
+  gap: 12px;
 }
 
 .brand-texts .b-main {
-  font-size: 22px;
+  font-size: 24px;
   font-weight: 900;
-  letter-spacing: 3px;
   color: #0f172a;
+  letter-spacing: 2px;
 }
 
 .brand-texts .b-sub {
   font-size: 9px;
   font-weight: 700;
-  color: #64748b;
+  color: var(--text-muted);
   letter-spacing: 1px;
 }
 
-.ticket-serial {
-  text-align: right;
-}
-
-.ticket-serial label {
-  display: block;
-  font-size: 9px;
-  font-weight: 800;
-  color: #94a3b8;
-  margin-bottom: 4px;
-}
-
-.ticket-serial span {
-  font-family: 'Courier New', Courier, monospace;
-  font-weight: 700;
-  font-size: 18px;
-  color: #334155;
-}
-
 .route-info {
-  display: flex;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: 1fr 100px 1fr;
   align-items: center;
-  margin-bottom: 50px;
+  margin-bottom: 40px;
+  text-align: center;
 }
 
-.from h3, .to h3 {
-  font-size: 2.4rem;
+.from, .to {
+  text-align: left;
+}
+
+.to { text-align: right; }
+
+.route-info label {
+  font-size: 10px;
+  font-weight: 800;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+
+.route-info h3 {
+  font-size: 26px;
   font-weight: 900;
   color: #0f172a;
   margin: 5px 0;
 }
 
-.route-info label {
-  font-size: 10px;
-  font-weight: 800;
-  color: #94a3b8;
-  letter-spacing: 1px;
-}
-
-.route-info .time {
-  font-weight: 700;
-  color: var(--accent-gold);
-  font-size: 18px;
-}
-
 .transport-way {
-  flex: 1;
   display: flex;
   align-items: center;
-  margin: 0 40px;
-  opacity: 0.3;
+  justify-content: center;
+  position: relative;
 }
 
 .transport-way .line {
-  flex: 1;
   height: 2px;
-  background: repeating-linear-gradient(to right, #000, #000 5px, transparent 5px, transparent 10px);
-}
-
-.transport-icon {
-  margin: 0 15px;
-  color: #000;
+  background: #cbd5e1;
+  flex: 1;
 }
 
 .passenger-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 30px;
-  margin-bottom: 50px;
+  gap: 15px;
+  margin-bottom: 30px;
 }
 
 .p-item label {
-  display: block;
   font-size: 9px;
   font-weight: 800;
-  color: #94a3b8;
-  margin-bottom: 6px;
+  color: var(--text-muted);
+  display: block;
 }
 
 .p-item span {
   font-weight: 700;
-  color: #1e293b;
-  font-size: 15px;
+  font-size: 14px;
+  color: #0f172a;
 }
 
 .seat-info-ribbon {
-  background: rgba(255, 180, 0, 0.05);
-  border: 1px solid rgba(255, 180, 0, 0.1);
-  padding: 15px 30px;
-  border-radius: 20px;
   display: flex;
   justify-content: space-between;
+  background: #f1f5f9;
+  padding: 15px 25px;
+  border-radius: 15px;
 }
 
-.ribbon-item label {
-  font-size: 8px;
-  font-weight: 800;
-  color: #64748b;
-  margin-bottom: 4px;
-}
-
-.ribbon-item span {
-  font-weight: 800;
-  color: #0f172a;
-}
-
-/* Ticket Stub */
 .ticket-stub {
   width: 280px;
   background: #f8fafc;
-  padding: 45px;
+  padding: 40px;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
   align-items: center;
+  justify-content: space-between;
 }
 
 .qr-wrap {
-  padding: 15px;
   background: white;
-  border-radius: 25px;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.05);
-}
-
-.stub-info {
-  text-align: center;
+  padding: 15px;
+  border-radius: 20px;
+  box-shadow: 0 10px 20px rgba(0,0,0,0.05);
 }
 
 .stub-info .price-tag {
-  font-size: 2rem;
+  font-size: 24px;
   font-weight: 900;
-  color: #0f172a;
-  margin-bottom: 10px;
+  color: var(--accent-gold);
 }
 
-.insurance-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 14px;
-  background: rgba(22, 163, 74, 0.1);
-  color: #16a34a;
+/* ─── Sidebar Card ──────────────────────────────────────────────────────── */
+.order-summary-card {
+  padding: 0;
+  overflow: hidden;
+  border-radius: 28px;
+}
+
+.summary-image {
+  height: 180px;
+  position: relative;
+}
+
+.summary-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.img-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, transparent, rgba(0,0,0,0.6));
+}
+
+.place-tag {
+  position: absolute;
+  top: 15px; right: 15px;
+  padding: 6px 12px;
   border-radius: 100px;
   font-size: 11px;
   font-weight: 800;
+  color: white;
 }
 
-.barcode {
-  font-family: 'Libre Barcode 39', cursive;
-  font-size: 32px;
-  color: #94a3b8;
-  letter-spacing: 2px;
-  opacity: 0.5;
+.summary-info {
+  padding: 25px;
 }
 
-/* Success Header */
+.price-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 10px;
+  font-size: 14px;
+}
+
+.price-row.total {
+  margin-top: 15px;
+  padding-top: 15px;
+  border-top: 1px dashed var(--glass-border);
+  font-weight: 900;
+  font-size: 18px;
+  color: var(--accent-gold);
+}
+
+/* ─── Success View ───────────────────────────────────────────────────────── */
+.ticket-success-header {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
 .success-icon-wrap {
   width: 80px;
   height: 80px;
-  background: #16a34a;
+  background: #10b981;
   color: white;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   margin: 0 auto 20px;
-  box-shadow: 0 15px 30px rgba(22, 163, 74, 0.3);
-  animation: springy 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  box-shadow: 0 10px 30px rgba(16, 185, 129, 0.3);
 }
 
-@keyframes springy {
-  0% { transform: scale(0); }
-  70% { transform: scale(1.1); }
-  100% { transform: scale(1); }
-}
-
-.status-badge-premium {
-  padding: 10px 20px;
-  border-radius: 100px;
-  background: #fefce8;
-  color: #854d0e;
-  font-weight: 800;
-  font-size: 12px;
+.ticket-footer-actions {
   display: flex;
-  align-items: center;
-  gap: 10px;
-  border: 1px solid #fef08a;
+  justify-content: center;
+  gap: 20px;
 }
 
-.pulse {
-  width: 8px;
-  height: 8px;
-  background: #ca8a04;
-  border-radius: 50%;
-  animation: pulseAnim 1.5s infinite;
-}
-
-@keyframes pulseAnim {
-  0% { box-shadow: 0 0 0 0 rgba(202, 138, 4, 0.7); }
-  70% { box-shadow: 0 0 0 10px rgba(202, 138, 4, 0); }
-  100% { box-shadow: 0 0 0 0 rgba(202, 138, 4, 0); }
-}
-
-/* Buttons */
 .btn-print {
   background: #0f172a;
   color: white;
-  padding: 16px 35px;
-  border-radius: 18px;
+  padding: 15px 30px;
+  border-radius: 14px;
   font-weight: 800;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  transition: all 0.3s ease;
+  border: none;
+  cursor: pointer;
+  transition: var(--transition);
 }
 
 .btn-print:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 15px 30px rgba(15, 23, 42, 0.3);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 20px rgba(0,0,0,0.2);
 }
 
-.btn-outline {
-  background: transparent;
-  padding: 16px 35px;
-  border: 2px solid #e2e8f0;
-  border-radius: 18px;
-  font-weight: 800;
-  color: #475569;
-  transition: all 0.3s ease;
-}
-
-.btn-outline:hover {
-  background: #f1f5f9;
-  border-color: #cbd5e1;
-}
-
-@media (max-width: 1024px) {
+/* ─── Responsive ────────────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+  .input-group.full-width {
+    grid-column: span 1;
+  }
   .holographic-ticket {
     flex-direction: column;
   }
   .ticket-stub {
     width: 100%;
-    border-top: 3px dashed #e2e8f0;
+    border-top: 2px dashed #e2e8f0;
     border-left: none;
+  }
+  .holographic-ticket::before {
+    display: none;
+  }
+  .passenger-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+  .route-info h3 {
+    font-size: 20px;
   }
 }

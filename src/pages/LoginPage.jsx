@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { useNavigate, Link, useLocation } from 'react-router-dom'
-import { User, Lock, ChevronRight, Sparkles } from 'lucide-react'
+import { User, Lock, ChevronRight, Sparkles, ChevronLeft } from 'lucide-react'
 
 import '../styles/AuthPage.css'
 import { useAuth } from '../context/AuthContext'
@@ -45,19 +45,22 @@ const LoginPage = () => {
 
   return (
     <div className="auth-page fade-in">
+      <button className="btn-back-auth" onClick={() => navigate(-1)} aria-label="Ortga">
+        <ChevronLeft size={24} />
+      </button>
       <div className="auth-card">
         <div className="auth-logo">
-            <Sparkles size={32} color="var(--primary-blue)" />
+          <Sparkles size={32} color="var(--primary-blue)" />
         </div>
         <h1 className="auth-title">Xush kelibsiz!</h1>
         <p className="auth-subtitle">Email yoki username va parol orqali tizimga kiring</p>
-        
+
         <form onSubmit={handleLogin} className="auth-form">
           <div className="input-field">
             <User className="field-icon" size={20} />
-            <input 
-              type="text" 
-              placeholder="Email yoki username" 
+            <input
+              type="text"
+              placeholder="Email yoki username"
               value={identifier}
               onChange={(e) => setIdentifier(e.target.value)}
               required
@@ -78,7 +81,7 @@ const LoginPage = () => {
           </button>
         </form>
         {error && <p style={{ color: '#d14343', marginTop: '14px' }}>{error}</p>}
-        
+
         <p className="auth-footer">
           Akkountingiz yo'qmi? <Link to="/register">Ro'yxatdan o'ting</Link>
         </p>
