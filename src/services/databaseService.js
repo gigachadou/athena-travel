@@ -245,6 +245,16 @@ export const addComment = async ({ placeId, userId, commentText, rating }) => {
   return data
 }
 
+export const deleteComment = async (commentId) => {
+  const client = requireSupabase()
+  const { error } = await client
+    .from('comments')
+    .delete()
+    .eq('id', commentId)
+
+  if (error) throw error
+}
+
 export const fetchIsFavorite = async ({ placeId, userId }) => {
   if (!userId || !isSupabaseConfigured || !supabase) return false
 
