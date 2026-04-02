@@ -103,9 +103,11 @@ export const AuthProvider = ({ children }) => {
       identifier,
       password,
     })
+
+    const authUser = nextSession?.user ?? authenticatedUser
     setSession(nextSession ?? null)
-    await hydrateUser(authenticatedUser)
-    return authenticatedUser
+    await hydrateUser(authUser)
+    return authUser
   }
 
   const register = async ({ email, password, username, fullName }) => {
