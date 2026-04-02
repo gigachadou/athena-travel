@@ -3,7 +3,21 @@ import { createClient } from '@supabase/supabase-js'
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
 
-export const isSupabaseConfigured = Boolean(supabaseUrl && supabaseAnonKey)
+const isValidSupabaseUrl = (value) => {
+  if (!value) return false
+
+  try {
+    const parsed = new URL(value)
+    return /^https?:$/.test(parsed.protocol)
+  } catch {
+    return false
+  }
+}
+
+export const isSupabaseConfigured = Boolean(isValidSupabaseUrl(supabaseUrl) && supabaseAnonKey)
+export const supabaseConfigError = isSupabaseConfigured
+  ? ''
+  : "Supabase sozlamalari topilmadi yoki noto'g'ri. `.env` ichidagi `VITE_SUPABASE_URL` va `VITE_SUPABASE_ANON_KEY` ni tekshiring."
 
 export const supabase = isSupabaseConfigured
   ? createClient(supabaseUrl, supabaseAnonKey)

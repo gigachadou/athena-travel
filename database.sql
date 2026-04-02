@@ -1,22 +1,11 @@
 -- 1. EXTENSIONS (UUID va boshqalar)
 create extension if not exists "uuid-ossp";
+create extension if not exists "pgcrypto";
 
 -- 2. TABLES (Jadvallar)
 
--- PROFILES (Foydalanuvchilar)
--- Bu Auth.users bilan avtomatik bog'lanadi
-create table if not exists public.profiles (
-  id uuid references auth.users on delete cascade primary key,
-  username text,
-  full_name text,
-  avatar_url text,
-  email text,
-  updated_at timestamp with time zone default timezone('utc'::text, now()),
-  created_at timestamp with time zone default timezone('utc'::text, now())
-);
-
-alter table public.profiles add column if not exists username text;
-create unique index if not exists profiles_username_key on public.profiles (username);
+-- USER METADATA
+-- Foydalanuvchi ma'lumotlari auth.users.raw_user_meta_data ichida saqlanadi
 
 -- PLACES (Sayohat Joylari)
 create table if not exists public.places (
@@ -99,7 +88,7 @@ create table if not exists public.place_ai_texts (
 create table if not exists public.comments (
   id uuid default uuid_generate_v4() primary key,
   place_id uuid references public.places(id) on delete cascade not null,
-  user_id uuid references public.profiles(id) on delete cascade not null,
+  user_id uuid references auth.users(id) on delete cascade not null,
   rating integer check (rating >= 1 and rating <= 5),
   comment_text text,
   created_at timestamp with time zone default timezone('utc'::text, now())
@@ -108,42 +97,76 @@ create table if not exists public.comments (
 -- FAVORITES (Sevimlilar)
 create table if not exists public.favorites (
   id uuid default uuid_generate_v4() primary key,
-  user_id uuid references public.profiles(id) on delete cascade not null,
+  user_id uuid references auth.users(id) on delete cascade not null,
   place_id uuid references public.places(id) on delete cascade not null,
   created_at timestamp with time zone default timezone('utc'::text, now()),
   unique(user_id, place_id)
 );
 
+alter table public.comments drop constraint if exists comments_user_id_fkey;
+alter table public.comments
+  add constraint comments_user_id_fkey
+  foreign key (user_id) references auth.users(id) on delete cascade;
+
+alter table public.favorites drop constraint if exists favorites_user_id_fkey;
+alter table public.favorites
+  add constraint favorites_user_id_fkey
+  foreign key (user_id) references auth.users(id) on delete cascade;
+
 -- 3. FUNCTIONS & TRIGGERS (Avtomatlashtirish)
 
--- Profil yaratishda avtomatik Trigger
-create or replace function public.handle_new_user()
-returns trigger as $$
-begin
-  insert into public.profiles (id, username, full_name, avatar_url, email)
-  values (
-    new.id,
-    new.raw_user_meta_data->>'username',
-    new.raw_user_meta_data->>'full_name',
-    new.raw_user_meta_data->>'avatar_url',
-    new.email
-  )
-  on conflict (id) do update
-  set
-    username = excluded.username,
-    full_name = excluded.full_name,
-    avatar_url = excluded.avatar_url,
-    email = excluded.email,
-    updated_at = timezone('utc'::text, now());
-  return new;
-end;
-$$ language plpgsql security definer;
+create or replace function public.find_user_by_username(input_username text)
+returns table (
+  id uuid,
+  email text,
+  username text,
+  full_name text,
+  avatar_url text
+)
+language sql
+security definer
+set search_path = public, auth
+as $$
+  select
+    u.id,
+    u.email::text,
+    coalesce(u.raw_user_meta_data->>'username', '') as username,
+    coalesce(u.raw_user_meta_data->>'full_name', '') as full_name,
+    coalesce(u.raw_user_meta_data->>'avatar_url', '') as avatar_url
+  from auth.users u
+  where lower(coalesce(u.raw_user_meta_data->>'username', '')) = lower(trim(input_username))
+  limit 1;
+$$;
 
--- Auth.users dan profile ga trigger
-drop trigger if exists on_auth_user_created on auth.users;
-create trigger on_auth_user_created
-  after insert on auth.users
-  for each row execute procedure public.handle_new_user();
+create or replace function public.get_comments_with_user_metadata(p_place_id uuid)
+returns table (
+  id uuid,
+  comment_text text,
+  rating integer,
+  created_at timestamp with time zone,
+  user_id uuid,
+  username text,
+  full_name text,
+  avatar_url text
+)
+language sql
+security definer
+set search_path = public, auth
+as $$
+  select
+    c.id,
+    c.comment_text,
+    c.rating,
+    c.created_at,
+    c.user_id,
+    coalesce(u.raw_user_meta_data->>'username', '') as username,
+    coalesce(u.raw_user_meta_data->>'full_name', '') as full_name,
+    coalesce(u.raw_user_meta_data->>'avatar_url', '') as avatar_url
+  from public.comments c
+  left join auth.users u on u.id = c.user_id
+  where c.place_id = p_place_id
+  order by c.created_at desc;
+$$;
 
 create or replace function public.set_updated_at()
 returns trigger as $$
@@ -161,55 +184,70 @@ create trigger set_place_ai_texts_updated_at
 -- Average Rating ni hisoblash funksiyasi
 create or replace function update_average_rating()
 returns trigger as $$
+declare
+  target_place_id uuid;
 begin
+  target_place_id = coalesce(new.place_id, old.place_id);
+
   update public.places
   set 
-    average_rating = (select avg(rating)::numeric(2,1) from public.comments where place_id = new.place_id),
-    rating_count = (select count(*) from public.comments where place_id = new.place_id)
-  where id = new.place_id;
-  return new;
+    average_rating = coalesce((select avg(rating)::numeric(2,1) from public.comments where place_id = target_place_id), 0.0),
+    rating_count = (select count(*) from public.comments where place_id = target_place_id)
+  where id = target_place_id;
+
+  return coalesce(new, old);
 end;
 $$ language plpgsql;
 
+drop trigger if exists on_comment_added on public.comments;
 create trigger on_comment_added
   after insert or update or delete on public.comments
   for each row execute procedure update_average_rating();
 
 -- 4. RLS POLICIES (Xavfsizlik)
 
-alter table public.profiles enable row level security;
 alter table public.places enable row level security;
 alter table public.place_ai_texts enable row level security;
 alter table public.comments enable row level security;
 alter table public.favorites enable row level security;
 alter table public.tickets enable row level security;
 
--- Profiles: O'zining profilini ko'rish va yangilash
-create policy "Users can view all profiles" on profiles for select using (true);
-create policy "Users can insert own profile" on profiles for insert with check (auth.uid() = id);
-create policy "Users can update own profile" on profiles for update using (auth.uid() = id);
-
 -- Places: Hamma ko'rishi mumkin, lekin faqat Admin o'zgartira oladi (Hozircha hamma select qilishi mumkin)
+drop policy if exists "Places are viewable by everyone" on places;
 create policy "Places are viewable by everyone" on places for select using (true);
 
 -- Place AI texts: Hamma ko'rishi mumkin
+drop policy if exists "Place AI texts are viewable by everyone" on place_ai_texts;
 create policy "Place AI texts are viewable by everyone" on place_ai_texts for select using (true);
 
 -- Comments: Hamma ko'rishi mumkin, faqat login qilganlar yoza oladi, faqat o'zi o'chira oladi
+drop policy if exists "Comments are viewable by everyone" on comments;
+drop policy if exists "Authenticated users can insert comments" on comments;
+drop policy if exists "Users can update own comments" on comments;
+drop policy if exists "Users can delete own comments" on comments;
 create policy "Comments are viewable by everyone" on comments for select using (true);
-create policy "Authenticated users can insert comments" on comments for insert with check (auth.role() = 'authenticated');
+create policy "Authenticated users can insert comments" on comments for insert with check (auth.uid() = user_id);
 create policy "Users can update own comments" on comments for update using (auth.uid() = user_id);
 create policy "Users can delete own comments" on comments for delete using (auth.uid() = user_id);
 
 -- Favorites: Faqat o'zining sevimlilarini ko'radi va boshqaradi
+drop policy if exists "Users can view own favorites" on favorites;
+drop policy if exists "Users can insert own favorites" on favorites;
+drop policy if exists "Users can delete own favorites" on favorites;
 create policy "Users can view own favorites" on favorites for select using (auth.uid() = user_id);
-create policy "Users can insert own favorites" on favorites for insert with check (auth.role() = 'authenticated');
+create policy "Users can insert own favorites" on favorites for insert with check (auth.uid() = user_id);
 create policy "Users can delete own favorites" on favorites for delete using (auth.uid() = user_id);
 
 -- Tickets: Faqat o'zining chiptalarini ko'radi va boshqaradi
+drop policy if exists "Users can view their own tickets" on public.tickets;
+drop policy if exists "Users can insert their own tickets" on public.tickets;
+drop policy if exists "Users can update their own tickets" on public.tickets;
 create policy "Users can view their own tickets" on public.tickets for select using ( auth.uid() = user_id );
 create policy "Users can insert their own tickets" on public.tickets for insert with check ( auth.uid() = user_id );
 create policy "Users can update their own tickets" on public.tickets for update using ( auth.uid() = user_id );
+
+grant execute on function public.find_user_by_username(text) to anon, authenticated;
+grant execute on function public.get_comments_with_user_metadata(uuid) to anon, authenticated;
 
 -- 5. INITIAL DATA (Boshlang'ich Ma'lumotlar - Surxondaryo)
 

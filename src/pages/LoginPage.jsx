@@ -26,6 +26,17 @@ const LoginPage = () => {
       navigate(nextPath, { replace: true })
     } catch (err) {
       console.error('Failed to login:', err)
+      if (err.code === 'email_not_confirmed') {
+        navigate('/otp', {
+          replace: true,
+          state: {
+            email: err.email || (identifier.includes('@') ? identifier.trim() : ''),
+            fromLogin: true,
+          },
+        })
+        return
+      }
+
       setError(err.message || 'Kirish amalga oshmadi.')
     } finally {
       setSubmitting(false)

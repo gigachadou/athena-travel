@@ -1,8 +1,23 @@
 import React, { createContext, useContext, useEffect, useState } from 'react'
-import { ensureProfile, fetchProfile, signInWithPassword, signOut, signUpWithPassword, updateProfile } from '../services/databaseService'
+import { fetchProfile, signInWithPassword, signOut, signUpWithPassword, updateProfile } from '../services/databaseService'
 import { isSupabaseConfigured, supabase } from '../lib/supabase'
 
 const AuthContext = createContext(null)
+
+const mergeRawUserMetadata = (rawUser, profile) => {
+  if (!rawUser) return rawUser
+
+  return {
+    ...rawUser,
+    email: profile?.email || rawUser.email || '',
+    user_metadata: {
+      ...rawUser.user_metadata,
+      username: profile?.username || '',
+      full_name: profile?.full_name || '',
+      avatar_url: profile?.avatar_url || '',
+    },
+  }
+}
 
 const buildAuthUser = ({ user, profile }) => {
   if (!user) return null
@@ -32,16 +47,7 @@ export const AuthProvider = ({ children }) => {
       return
     }
 
-    let nextProfile = await fetchProfile(authUser.id)
-    if (!nextProfile) {
-      nextProfile = await ensureProfile({
-        userId: authUser.id,
-        username: authUser.user_metadata?.username,
-        fullName: authUser.user_metadata?.full_name,
-        email: authUser.email,
-        avatarUrl: authUser.user_metadata?.avatar_url,
-      })
-    }
+    const nextProfile = await fetchProfile(authUser.id)
 
     setProfile(nextProfile)
     setUser(buildAuthUser({ user: authUser, profile: nextProfile }))
@@ -110,16 +116,6 @@ export const AuthProvider = ({ children }) => {
       fullName,
     })
 
-    if (registeredUser?.id && nextSession?.user) {
-      await ensureProfile({
-        userId: registeredUser.id,
-        username,
-        fullName,
-        email,
-        avatarUrl: '',
-      })
-    }
-
     if (nextSession?.user) {
       setSession(nextSession)
       await hydrateUser(nextSession.user)
@@ -132,7 +128,7 @@ export const AuthProvider = ({ children }) => {
     if (!user?.id) return null
     const freshProfile = await fetchProfile(user.id)
     setProfile(freshProfile)
-    setUser(buildAuthUser({ user: user.rawUser, profile: freshProfile }))
+    setUser(buildAuthUser({ user: mergeRawUserMetadata(user.rawUser, freshProfile), profile: freshProfile }))
     return freshProfile
   }
 
@@ -140,7 +136,7 @@ export const AuthProvider = ({ children }) => {
     if (!user?.id) throw new Error('Authenticated user required.')
     const updated = await updateProfile(user.id, updates)
     setProfile(updated)
-    setUser(buildAuthUser({ user: user.rawUser, profile: updated }))
+    setUser(buildAuthUser({ user: mergeRawUserMetadata(user.rawUser, updated), profile: updated }))
     return updated
   }
 

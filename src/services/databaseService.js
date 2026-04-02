@@ -1,10 +1,23 @@
-import { supabase } from '../lib/supabase'
+import { isSupabaseConfigured, supabase, supabaseConfigError } from '../lib/supabase'
 import { SURKHANDARYA_POSTS } from '../data/posts'
 
 const FALLBACK_IMAGE =
   'https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=1200'
 
 const numberFormatter = new Intl.NumberFormat('en-US')
+
+const getEmailRedirectTo = () => {
+  if (typeof window === 'undefined') return undefined
+  return `${window.location.origin}/login`
+}
+
+const requireSupabase = () => {
+  if (!isSupabaseConfigured || !supabase) {
+    throw new Error(supabaseConfigError)
+  }
+
+  return supabase
+}
 
 export const formatPrice = (value) => {
   const amount = Number(value ?? 0)
@@ -57,7 +70,8 @@ export const normalizePlaceAiText = (row) => {
 
 export const fetchPlaces = async () => {
   try {
-    const { data, error } = await supabase
+    const client = requireSupabase()
+    const { data, error } = await client
       .from('places')
       .select('*')
       .order('created_at', { ascending: false })
@@ -75,7 +89,8 @@ export const fetchPlaces = async () => {
 
 export const fetchPlaceById = async (id) => {
   try {
-    const { data, error } = await supabase
+    const client = requireSupabase()
+    const { data, error } = await client
       .from('places')
       .select('*')
       .eq('id', id)
@@ -98,6 +113,8 @@ export const fetchPlaceById = async (id) => {
 }
 
 export const fetchPlaceAiText = async (placeId, locale = 'uz') => {
+  if (!isSupabaseConfigured || !supabase) return null
+
   const preferredLocale = locale === 'uz' ? 'uz' : 'en'
   const fallbackLocales = preferredLocale === 'uz' ? ['uz', 'en'] : ['en', 'uz']
 
@@ -115,15 +132,16 @@ export const fetchPlaceAiText = async (placeId, locale = 'uz') => {
 }
 
 export const fetchPlacesForAI = async (locale = 'uz') => {
+  const client = requireSupabase()
   const preferredLocale = locale === 'uz' ? 'uz' : 'en'
   const fallbackLocales = preferredLocale === 'uz' ? ['uz', 'en'] : ['en', 'uz']
 
   const [{ data: places, error: placesError }, { data: aiTexts, error: aiTextsError }] = await Promise.all([
-    supabase
+    client
       .from('places')
       .select('*')
       .order('created_at', { ascending: false }),
-    supabase
+    client
       .from('place_ai_texts')
       .select('*')
       .in('locale', fallbackLocales),
@@ -154,18 +172,18 @@ export const fetchPlacesForAI = async (locale = 'uz') => {
 }
 
 export const fetchCommentsByPlaceId = async (placeId) => {
-  const { data, error } = await supabase
-    .from('comments')
-    .select('id, comment_text, rating, created_at, user_id, profiles(full_name, avatar_url)')
-    .eq('place_id', placeId)
-    .order('created_at', { ascending: false })
+  if (!isSupabaseConfigured || !supabase) return []
+
+  const { data, error } = await supabase.rpc('get_comments_with_user_metadata', {
+    p_place_id: placeId,
+  })
 
   if (error) throw error
 
   return (data || []).map((comment) => ({
     id: comment.id,
-    user: comment.profiles?.full_name || 'Foydalanuvchi',
-    avatar: comment.profiles?.avatar_url || null,
+    user: comment.full_name || 'Foydalanuvchi',
+    avatar: comment.avatar_url || null,
     text: comment.comment_text || '',
     rating: Number(comment.rating ?? 0),
     date: comment.created_at,
@@ -174,7 +192,8 @@ export const fetchCommentsByPlaceId = async (placeId) => {
 }
 
 export const addComment = async ({ placeId, userId, commentText, rating }) => {
-  const { data, error } = await supabase
+  const client = requireSupabase()
+  const { data, error } = await client
     .from('comments')
     .insert({
       place_id: placeId,
@@ -190,7 +209,7 @@ export const addComment = async ({ placeId, userId, commentText, rating }) => {
 }
 
 export const fetchIsFavorite = async ({ placeId, userId }) => {
-  if (!userId) return false
+  if (!userId || !isSupabaseConfigured || !supabase) return false
 
   const { data, error } = await supabase
     .from('favorites')
@@ -204,7 +223,8 @@ export const fetchIsFavorite = async ({ placeId, userId }) => {
 }
 
 export const addFavorite = async ({ placeId, userId }) => {
-  const { error } = await supabase.from('favorites').insert({
+  const client = requireSupabase()
+  const { error } = await client.from('favorites').insert({
     place_id: placeId,
     user_id: userId,
   })
@@ -213,7 +233,8 @@ export const addFavorite = async ({ placeId, userId }) => {
 }
 
 export const removeFavorite = async ({ placeId, userId }) => {
-  const { error } = await supabase
+  const client = requireSupabase()
+  const { error } = await client
     .from('favorites')
     .delete()
     .eq('place_id', placeId)
@@ -223,47 +244,57 @@ export const removeFavorite = async ({ placeId, userId }) => {
 }
 
 export const getCurrentSession = async () => {
-  const { data, error } = await supabase.auth.getSession()
+  const client = requireSupabase()
+  const { data, error } = await client.auth.getSession()
   if (error) throw error
   return data.session
 }
 
-export const ensureProfile = async ({ userId, username, fullName, email, avatarUrl }) => {
-  const { data, error } = await supabase
-    .from('profiles')
-    .upsert(
-      {
-        id: userId,
-        username: username || null,
-        full_name: fullName || null,
-        email: email || null,
-        avatar_url: avatarUrl || null,
-      },
-      { onConflict: 'id' }
-    )
-    .select('*')
-    .single()
+const normalizeAuthUserProfile = (user) => {
+  if (!user) return null
 
-  if (error) throw error
-  return data
+  return {
+    id: user.id,
+    email: user.email || '',
+    username: user.user_metadata?.username || '',
+    full_name: user.user_metadata?.full_name || '',
+    avatar_url: user.user_metadata?.avatar_url || '',
+  }
+}
+
+const isNetworkFetchError = (error) =>
+  error instanceof TypeError && error.message === 'Failed to fetch'
+
+const isEmailNotConfirmedError = (error) =>
+  typeof error?.message === 'string' && error.message.toLowerCase().includes('email not confirmed')
+
+const createEmailNotConfirmedError = (email) => {
+  const authError = new Error("Email tasdiqlanmagan. Pochtangizdagi havolani bosing yoki tasdiqlash xabarini qayta yuboring.")
+  authError.code = 'email_not_confirmed'
+  authError.email = email
+  return authError
 }
 
 export const fetchProfileByUsername = async (username) => {
-  const { data, error } = await supabase
-    .from('profiles')
-    .select('*')
-    .ilike('username', username)
-    .maybeSingle()
+  const cleanedUsername = username?.trim()
+  if (!cleanedUsername) return null
+
+  const client = requireSupabase()
+  const { data, error } = await client.rpc('find_user_by_username', {
+    input_username: cleanedUsername,
+  })
 
   if (error) throw error
-  return data
+  return data?.[0] || null
 }
 
 export const signUpWithPassword = async ({ email, password, username, fullName }) => {
-  const { data, error } = await supabase.auth.signUp({
+  const client = requireSupabase()
+  const { data, error } = await client.auth.signUp({
     email,
     password,
     options: {
+      emailRedirectTo: getEmailRedirectTo(),
       data: {
         username,
         full_name: fullName,
@@ -275,63 +306,105 @@ export const signUpWithPassword = async ({ email, password, username, fullName }
   return data
 }
 
+export const resendSignupConfirmation = async (email) => {
+  const normalizedEmail = email?.trim()
+  if (!normalizedEmail) {
+    throw new Error('Tasdiqlash xabarini yuborish uchun email kerak.')
+  }
+
+  const client = requireSupabase()
+  const { error } = await client.auth.resend({
+    type: 'signup',
+    email: normalizedEmail,
+    options: {
+      emailRedirectTo: getEmailRedirectTo(),
+    },
+  })
+
+  if (error) throw error
+}
+
 export const signInWithPassword = async ({ identifier, password }) => {
   let email = identifier.trim()
 
   if (!email.includes('@')) {
-    const profile = await fetchProfileByUsername(email)
+    let profile
+
+    try {
+      profile = await fetchProfileByUsername(email)
+    } catch (error) {
+      if (isNetworkFetchError(error)) {
+        throw new Error("Username orqali kirish hozir ishlamayapti. Iltimos, email orqali kiring.")
+      }
+
+      throw error
+    }
+
     if (!profile?.email) {
       throw new Error('Username topilmadi.')
     }
     email = profile.email
   }
 
-  const { data, error } = await supabase.auth.signInWithPassword({
+  const client = requireSupabase()
+  const { data, error } = await client.auth.signInWithPassword({
     email,
     password,
   })
 
-  if (error) throw error
+  if (error) {
+    if (isEmailNotConfirmedError(error)) {
+      throw createEmailNotConfirmedError(email)
+    }
+
+    throw error
+  }
+
   return data
 }
 
 export const signOut = async () => {
+  if (!isSupabaseConfigured || !supabase) return
+
   const { error } = await supabase.auth.signOut()
   if (error) throw error
 }
 
 export const fetchProfile = async (userId) => {
   if (!userId) return null
+  if (!isSupabaseConfigured || !supabase) return null
 
-  const { data, error } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', userId)
-    .maybeSingle()
+  const { data, error } = await supabase.auth.getUser()
 
   if (error) throw error
-  return data
+  if (data.user?.id !== userId) return null
+
+  return normalizeAuthUserProfile(data.user)
 }
 
 export const updateProfile = async (userId, updates) => {
-  const { data, error } = await supabase
-    .from('profiles')
-    .upsert(
-      {
-        id: userId,
-        ...updates,
-      },
-      { onConflict: 'id' }
-    )
-    .select()
-    .single()
+  const client = requireSupabase()
+  const { data: authData, error: authError } = await client.auth.getUser()
+  if (authError) throw authError
+  if (authData.user?.id !== userId) {
+    throw new Error('Authenticated user required.')
+  }
+
+  const { data, error } = await client.auth.updateUser({
+    data: {
+      ...authData.user.user_metadata,
+      username: updates.username ?? '',
+      full_name: updates.full_name ?? '',
+      avatar_url: updates.avatar_url ?? '',
+    },
+  })
 
   if (error) throw error
-  return data
+  return normalizeAuthUserProfile(data.user)
 }
 
 export const fetchUserTickets = async (userId) => {
-  if (!userId) return []
+  if (!userId || !isSupabaseConfigured || !supabase) return []
   const { data, error } = await supabase
     .from('tickets')
     .select('*')
@@ -342,8 +415,23 @@ export const fetchUserTickets = async (userId) => {
   return data
 }
 
-export const createTicketInDB = async (ticketData) => {
+export const fetchUserTicketById = async ({ ticketId, userId }) => {
+  if (!ticketId || !userId || !isSupabaseConfigured || !supabase) return null
+
   const { data, error } = await supabase
+    .from('tickets')
+    .select('*')
+    .eq('id', ticketId)
+    .eq('user_id', userId)
+    .maybeSingle()
+
+  if (error) throw error
+  return data
+}
+
+export const createTicketInDB = async (ticketData) => {
+  const client = requireSupabase()
+  const { data, error } = await client
     .from('tickets')
     .insert([ticketData])
     .select()
