@@ -49,7 +49,6 @@ export const AuthProvider = ({ children }) => {
     }
 
     const nextProfile = await fetchProfile(authUser.id)
-
     setProfile(nextProfile)
     setUser(buildAuthUser({ user: authUser, profile: nextProfile }))
   }
@@ -61,52 +60,61 @@ export const AuthProvider = ({ children }) => {
       return undefined
     }
 
-    let active = true
+    let mounted = true
+    let subscription = null
 
-    const init = async () => {
+    const updateAuthState = async (nextSession) => {
+      if (!mounted) return
+
+      setSession(nextSession ?? null)
+      if (!nextSession?.user) {
+        setUser(null)
+        setProfile(null)
+        return
+      }
+
       try {
-        const { data, error } = await supabase.auth.getSession()
-        if (error) throw error
-        if (!active) return
-
-        await handleSessionUpdate(data.session)
+        await hydrateUser(nextSession.user)
       } catch (error) {
-        console.error('Failed to restore Supabase session:', error)
-        if (active) setAuthError('Supabase sessiyasi tiklanmadi: ' + (error?.message || 'noma’lum xato'))
-      } finally {
-        if (active) setLoading(false)
+        console.error('Failed to hydrate authenticated user:', error)
       }
     }
 
-    init()
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (_event, nextSession) => {
-      if (!active) return
-      setSession(nextSession ?? null)
+    const restoreSession = async () => {
       try {
-        await hydrateUser(nextSession?.user ?? null)
+        const { data, error } = await supabase.auth.getSession()
+        if (error) throw error
+        if (!mounted) return
+
+        await updateAuthState(data.session)
       } catch (error) {
-        console.error('Failed to hydrate authenticated user:', error)
+        console.error('Failed to restore Supabase session:', error)
+        if (mounted) {
+          setAuthError('Supabase sessiyasi tiklanmadi: ' + (error?.message || 'noma’lum xato'))
+        }
       } finally {
-        if (active) setLoading(false)
+        if (mounted) setLoading(false)
       }
+    }
+
+    restoreSession()
+
+    const result = supabase.auth.onAuthStateChange(async (event, nextSession) => {
+      if (!mounted) return
+      if (event === 'INITIAL_SESSION') return
+      await updateAuthState(nextSession)
     })
 
+    subscription = result.data?.subscription
+
     return () => {
-      active = false
-      clearAuthTimeout()
-      subscription.unsubscribe()
+      mounted = false
+      subscription?.unsubscribe()
     }
   }, [])
 
   const login = async ({ identifier, password }) => {
-    const { user: authenticatedUser, session: nextSession } = await signInWithPassword({
-      identifier,
-      password,
-    })
-
+    const { user: authenticatedUser, session: nextSession } = await signInWithPassword({ identifier, password })
     const authUser = nextSession?.user ?? authenticatedUser
     setSession(nextSession ?? null)
     await hydrateUser(authUser)
@@ -114,12 +122,7 @@ export const AuthProvider = ({ children }) => {
   }
 
   const register = async ({ email, password, username, fullName }) => {
-    const { user: registeredUser, session: nextSession } = await signUpWithPassword({
-      email,
-      password,
-      username,
-      fullName,
-    })
+    const { user: registeredUser, session: nextSession } = await signUpWithPassword({ email, password, username, fullName })
 
     if (nextSession?.user) {
       setSession(nextSession)
