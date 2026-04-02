@@ -3,10 +3,13 @@ import { Outlet, useLocation } from 'react-router-dom'
 import { Header, Footer } from './Navigation'
 
 const Layout = () => {
+  const location = useLocation();
+  const isMapPage = location.pathname === '/map';
+
   return (
     <div className="layout">
       <Header />
-      <main className="main-content container">
+      <main className={`main-content ${isMapPage ? 'full-map-content' : 'container'}`}>
         <Outlet />
       </main>
       <Footer />
@@ -25,6 +28,8 @@ const Layout = () => {
         .full-map-content {
           padding: 0 !important;
           max-width: none !important;
+          display: flex;
+          flex-direction: column;
         }
       `}</style>
     </div>

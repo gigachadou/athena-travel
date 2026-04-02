@@ -286,106 +286,7 @@ const MapPage = () => {
   return (
     <div className="map-page fade-in">
 
-      {/* ── Top Bar (Floating) ────────────────────────────────────────── */}
-      <div className="map-top-bar glass animate-up">
-        <div className="map-header-left" onClick={() => navigate('/')} style={{ cursor: 'pointer' }}>
-          <div className="icon-box-map">
-            <ChevronLeft size={22} />
-          </div>
-          <div>
-            <h3 className="map-title">Interaktiv Xarita</h3>
-            <p className="map-subtitle">
-              {fetchStatus === 'loading'
-                ? 'Yuklanmoqda...'
-                : fetchStatus === 'done'
-                  ? <>{filtered.length} joy topildi · <span className="osm-badge">OSM</span></>
-                  : fetchStatus === 'error'
-                    ? <span className="err-txt">Xato yuz berdi</span>
-                    : 'Tayyor'
-              }
-              {geoStatus === 'success' && <span className="geo-ok"> · GPS ✓</span>}
-            </p>
-          </div>
-        </div>
 
-        <div className="map-header-right">
-          {showSearch ? (
-            <div className="search-input-wrap">
-              <Search size={14} className="search-icon-inline" />
-              <input
-                autoFocus
-                className="map-search-input"
-                placeholder="Joy qidiring..."
-                value={searchQuery}
-                onChange={e => setSearchQuery(e.target.value)}
-              />
-              <button className="search-close-btn" onClick={() => { setShowSearch(false); setSearchQuery('') }}>
-                <X size={14} />
-              </button>
-            </div>
-          ) : (
-            <button className="map-action-btn" onClick={() => setShowSearch(true)} title="Qidirish">
-              <Search size={17} />
-            </button>
-          )}
-          <button
-            className="map-action-btn"
-            onClick={handleRefresh}
-            title="Ma'lumotlarni yangilash"
-            disabled={fetchStatus === 'loading'}
-          >
-            <RefreshCw size={17} className={fetchStatus === 'loading' ? 'spin-slow' : ''} />
-          </button>
-          <button className="map-action-btn" onClick={cycleLayer} title="Xarita turi">
-            <Layers size={17} />
-          </button>
-          <button
-            className={`map-action-btn geo-btn geo-${geoStatus}`}
-            onClick={requestGeo}
-            title="Mening joylashuvim"
-          >
-            {geoStatus === 'loading' ? <span className="spinner-mini" /> : <Crosshair size={17} />}
-          </button>
-        </div>
-      </div>
-
-      {/* ── Geo/Fetch Toasts (Centered & Floating) ───────────────────────── */}
-      {(geoStatus === 'success' || geoStatus === 'error') && (
-        <div className={`geo-toast ${geoStatus === 'error' ? 'geo-toast-error' : ''}`}>
-          {geoStatus === 'success'
-            ? <><CheckCircle2 size={16} /> {t('location_found') || 'Joylashuv aniqlandi!'}</>
-            : <><AlertCircle  size={16} /> {t('location_not_found') || 'GPS aniqlanmadi — standart joy ishlatilmoqda.'}</>
-          }
-        </div>
-      )}
-      {fetchStatus === 'error' && (
-        <div className="geo-toast geo-toast-error">
-          <AlertCircle size={16} />
-          {t('osm_fetch_error') || 'Xaritadan ma\'lumot olinmadi. Internetni tekshiring.'}
-          <button className="toast-retry-btn" onClick={handleRefresh}>{t('retry') || 'Qayta'}</button>
-        </div>
-      )}
-
-      {/* ── Category Filter (Floating) ────────────────────────────────────── */}
-      <div className="category-filter animate-up no-scrollbar">
-        {CATEGORIES.map(({ id, label, Icon }) => {
-          const cnt = id === 'all' ? places.length : countOf(id)
-          return (
-            <button
-              key={id}
-              className={`cat-btn ${filter === id ? 'active' : ''}`}
-              onClick={() => setFilter(id)}
-            >
-              <Icon size={14} strokeWidth={2.5} />
-              <span className="cat-label">{label}</span>
-              {fetchStatus === 'loading'
-                ? <span className="cat-count skeleton-count" />
-                : <span className="cat-count">{cnt}</span>
-              }
-            </button>
-          )
-        })}
-      </div>
 
       {/* ── Floating Sidebar (Drawer/Card) ─────────────────────────────────── */}
       <div className={`map-sidebar glass ${selectedLoc ? 'open' : ''}`}>
@@ -633,6 +534,107 @@ const MapPage = () => {
             <button className="rip-close" onClick={handleClose}><X size={13} /></button>
           </div>
         )}
+      </div>
+
+      {/* ── Top Bar (Floating) ────────────────────────────────────────── */}
+      <div className="map-top-bar animate-up" style={{ pointerEvents: 'auto' }}>
+        <div className="map-header-left" onClick={() => navigate('/')} style={{ cursor: 'pointer' }}>
+          <div className="icon-box-map">
+            <ChevronLeft size={22} />
+          </div>
+          <div>
+            <h3 className="map-title">Interaktiv Xarita</h3>
+            <p className="map-subtitle">
+              {fetchStatus === 'loading'
+                ? 'Yuklanmoqda...'
+                : fetchStatus === 'done'
+                  ? <>{filtered.length} joy topildi · <span className="osm-badge">OSM</span></>
+                  : fetchStatus === 'error'
+                    ? <span className="err-txt">Xato yuz berdi</span>
+                    : 'Tayyor'
+              }
+              {geoStatus === 'success' && <span className="geo-ok"> · GPS ✓</span>}
+            </p>
+          </div>
+        </div>
+
+        <div className="map-header-right">
+          {showSearch ? (
+            <div className="search-input-wrap">
+              <Search size={14} className="search-icon-inline" />
+              <input
+                autoFocus
+                className="map-search-input"
+                placeholder="Joy qidiring..."
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+              />
+              <button className="search-close-btn" onClick={() => { setShowSearch(false); setSearchQuery('') }}>
+                <X size={14} />
+              </button>
+            </div>
+          ) : (
+            <button className="map-action-btn" onClick={() => setShowSearch(true)} title="Qidirish">
+              <Search size={17} />
+            </button>
+          )}
+          <button
+            className="map-action-btn"
+            onClick={handleRefresh}
+            title="Ma'lumotlarni yangilash"
+            disabled={fetchStatus === 'loading'}
+          >
+            <RefreshCw size={17} className={fetchStatus === 'loading' ? 'spin-slow' : ''} />
+          </button>
+          <button className="map-action-btn" onClick={cycleLayer} title="Xarita turi">
+            <Layers size={17} />
+          </button>
+          <button
+            className={`map-action-btn geo-btn geo-${geoStatus}`}
+            onClick={requestGeo}
+            title="Mening joylashuvim"
+          >
+            {geoStatus === 'loading' ? <span className="spinner-mini" /> : <Crosshair size={17} />}
+          </button>
+        </div>
+      </div>
+
+      {/* ── Geo/Fetch Toasts (Centered & Floating) ───────────────────────── */}
+      {(geoStatus === 'success' || geoStatus === 'error') && (
+        <div className={`geo-toast ${geoStatus === 'error' ? 'geo-toast-error' : ''}`} style={{ pointerEvents: 'auto' }}>
+          {geoStatus === 'success'
+            ? <><CheckCircle2 size={16} /> {t('location_found') || 'Joylashuv aniqlandi!'}</>
+            : <><AlertCircle  size={16} /> {t('location_not_found') || 'GPS aniqlanmadi — standart joy ishlatilmoqda.'}</>
+          }
+        </div>
+      )}
+      {fetchStatus === 'error' && (
+        <div className="geo-toast geo-toast-error" style={{ pointerEvents: 'auto' }}>
+          <AlertCircle size={16} />
+          {t('osm_fetch_error') || 'Xaritadan ma\'lumot olinmadi. Internetni tekshiring.'}
+          <button className="toast-retry-btn" onClick={handleRefresh}>{t('retry') || 'Qayta'}</button>
+        </div>
+      )}
+
+      {/* ── Category Filter (Floating) ────────────────────────────────────── */}
+      <div className="category-filter animate-up no-scrollbar" style={{ pointerEvents: 'auto' }}>
+        {CATEGORIES.map(({ id, label, Icon }) => {
+          const cnt = id === 'all' ? places.length : countOf(id)
+          return (
+            <button
+              key={id}
+              className={`cat-btn ${filter === id ? 'active' : ''}`}
+              onClick={() => setFilter(id)}
+            >
+              <Icon size={14} strokeWidth={2.5} />
+              <span className="cat-label">{label}</span>
+              {fetchStatus === 'loading'
+                ? <span className="cat-count skeleton-count" />
+                : <span className="cat-count">{cnt}</span>
+              }
+            </button>
+          )
+        })}
       </div>
     </div>
   )
