@@ -1,21 +1,11 @@
 import { GoogleGenAI } from '@google/genai';
-import { SURKHANDARYA_POSTS } from '../data/posts';
 import { fetchPlacesForAI, formatPrice } from './databaseService';
 import { isSupabaseConfigured } from '../lib/supabase';
 
 const API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
 const MODEL_NAME = 'gemini-2.5-flash';
 
-const FALLBACK_DESTINATION_CONTEXT = SURKHANDARYA_POSTS.map((post) => ({
-  title: post.title,
-  location: post.location,
-  type: post.type,
-  price: post.price,
-  description: post.description,
-  amenities: post.amenities,
-  bestSeason: post.bestSeason,
-  rating: post.rating,
-}));
+const FALLBACK_DESTINATION_CONTEXT = [];
 
 let aiClient;
 const CONTEXT_CACHE_TTL = 60_000;

@@ -63,6 +63,18 @@ export const AuthProvider = ({ children }) => {
 
     let active = true
 
+    const handleSessionUpdate = async (nextSession) => {
+      if (!active) return
+      setSession(nextSession ?? null)
+      try {
+        await hydrateUser(nextSession?.user ?? null)
+      } catch (error) {
+        console.error('Failed to hydrate authenticated user:', error)
+      } finally {
+        if (active) setLoading(false)
+      }
+    }
+
     const init = async () => {
       try {
         const { data, error } = await supabase.auth.getSession()
@@ -84,19 +96,11 @@ export const AuthProvider = ({ children }) => {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (_event, nextSession) => {
       if (!active) return
-      setSession(nextSession ?? null)
-      try {
-        await hydrateUser(nextSession?.user ?? null)
-      } catch (error) {
-        console.error('Failed to hydrate authenticated user:', error)
-      } finally {
-        if (active) setLoading(false)
-      }
+      await handleSessionUpdate(nextSession)
     })
 
     return () => {
       active = false
-      clearAuthTimeout()
       subscription.unsubscribe()
     }
   }, [])

@@ -3,10 +3,15 @@ import { Outlet, useLocation } from 'react-router-dom'
 import { Header, Footer } from './Navigation'
 
 const Layout = () => {
+  const location = useLocation()
+  
+  // Hide global header on place details and ticket booking pages
+  const hideHeader = location.pathname.startsWith('/place/') || location.pathname.startsWith('/ticket/')
+  
   return (
     <div className="layout">
-      <Header />
-      <main className="main-content container">
+      {!hideHeader && <Header />}
+      <main className={`main-content container ${hideHeader ? 'full-map-content' : ''}`}>
         <Outlet />
       </main>
       <Footer />

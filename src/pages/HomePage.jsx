@@ -32,10 +32,6 @@ const HomePage = () => {
       try {
         const data = await fetchPlaces()
         setPlaces(data)
-        setDataSource(data[0]?.__source || 'supabase')
-        if (data[0]?.__source === 'mock') {
-          setError("Supabase ulanmayapti, hozircha mock data ko'rsatilmoqda.")
-        }
         setFilters(createDefaultFilters(Math.max(...data.map((place) => place.priceValue), 0)))
       } catch (err) {
         console.error('Failed to load places:', err)
