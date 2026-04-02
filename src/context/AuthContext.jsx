@@ -49,7 +49,6 @@ export const AuthProvider = ({ children }) => {
     }
 
     const nextProfile = await fetchProfile(authUser.id)
-
     setProfile(nextProfile)
     setUser(buildAuthUser({ user: authUser, profile: nextProfile }))
   }
@@ -63,7 +62,28 @@ export const AuthProvider = ({ children }) => {
 
     let active = true
 
-    const handleSessionUpdate = async (nextSession) => {
+    const init = async () => {
+      try {
+        const { data, error } = await supabase.auth.getSession()
+        if (error) throw error
+        if (!mounted) return
+
+        await updateAuthState(data.session)
+      } catch (error) {
+        console.error('Failed to restore Supabase session:', error)
+        if (mounted) {
+          setAuthError('Supabase sessiyasi tiklanmadi: ' + (error?.message || 'noma’lum xato'))
+        }
+      } finally {
+        if (mounted) setLoading(false)
+      }
+    }
+
+    restoreSession()
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (_event, nextSession) => {
       if (!active) return
       setSession(nextSession ?? null)
       try {
@@ -73,44 +93,17 @@ export const AuthProvider = ({ children }) => {
       } finally {
         if (active) setLoading(false)
       }
-    }
-
-    const init = async () => {
-      try {
-        const { data, error } = await supabase.auth.getSession()
-        if (error) throw error
-        if (!active) return
-
-        await handleSessionUpdate(data.session)
-      } catch (error) {
-        console.error('Failed to restore Supabase session:', error)
-        if (active) setAuthError('Supabase sessiyasi tiklanmadi: ' + (error?.message || 'noma’lum xato'))
-      } finally {
-        if (active) setLoading(false)
-      }
-    }
-
-    init()
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (_event, nextSession) => {
-      if (!active) return
-      await handleSessionUpdate(nextSession)
     })
 
     return () => {
       active = false
+      clearAuthTimeout()
       subscription.unsubscribe()
     }
   }, [])
 
   const login = async ({ identifier, password }) => {
-    const { user: authenticatedUser, session: nextSession } = await signInWithPassword({
-      identifier,
-      password,
-    })
-
+    const { user: authenticatedUser, session: nextSession } = await signInWithPassword({ identifier, password })
     const authUser = nextSession?.user ?? authenticatedUser
     setSession(nextSession ?? null)
     await hydrateUser(authUser)
@@ -118,12 +111,7 @@ export const AuthProvider = ({ children }) => {
   }
 
   const register = async ({ email, password, username, fullName }) => {
-    const { user: registeredUser, session: nextSession } = await signUpWithPassword({
-      email,
-      password,
-      username,
-      fullName,
-    })
+    const { user: registeredUser, session: nextSession } = await signUpWithPassword({ email, password, username, fullName })
 
     if (nextSession?.user) {
       setSession(nextSession)

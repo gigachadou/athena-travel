@@ -150,6 +150,14 @@ const TicketPage = () => {
         birth_date: form.birthDate,
         gender: form.gender,
         total_price: totalPrice,
+        
+        // Payment Metadata
+        payment_status: 'paid',
+        payment_method: 'card',
+        card_last4: cardData.number.replace(/\s/g, '').slice(-4),
+        transaction_id: `TRX-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+        payment_at: new Date().toISOString(),
+
         status: 'checking',
         seat: `S${Math.floor(Math.random() * 50) + 1}`,
         train: `REG-${Math.floor(Math.random() * 900) + 100}`,
