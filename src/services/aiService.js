@@ -123,8 +123,69 @@ const getDestinationContext = async (locale = 'uz') => {
   return getFallbackContext()
 }
 
-const buildSystemPrompt = (destinationContext, locale = 'uz') => {
-  const responseLanguage = locale === 'uz' ? "o'zbek" : 'english'
+const UZBEK_LANGUAGE_HINTS = [
+  "o'z",
+  "g'",
+  "sh",
+  "ch",
+  "yaqin",
+  "qayer",
+  "qaysi",
+  "uchun",
+  "bilan",
+  "bo'yicha",
+  "iltimos",
+  "mehmonxona",
+  "sayohat",
+  "tavsiya",
+  "kerak",
+  "mumkin",
+]
+
+const ENGLISH_LANGUAGE_HINTS = [
+  'the',
+  'and',
+  'for',
+  'with',
+  'near',
+  'best',
+  'hotel',
+  'travel',
+  'plan',
+  'recommend',
+  'where',
+  'what',
+  'please',
+]
+
+const detectPreferredResponseLanguage = (message, locale = 'uz') => {
+  const normalizedMessage = message?.trim().toLowerCase()
+
+  if (!normalizedMessage) {
+    return locale === 'en' ? 'english' : "o'zbek"
+  }
+
+  const uzbekScore = UZBEK_LANGUAGE_HINTS.reduce(
+    (score, hint) => score + (normalizedMessage.includes(hint) ? 1 : 0),
+    0,
+  )
+  const englishScore = ENGLISH_LANGUAGE_HINTS.reduce(
+    (score, hint) => score + (normalizedMessage.includes(hint) ? 1 : 0),
+    0,
+  )
+
+  if (uzbekScore > englishScore) {
+    return "o'zbek"
+  }
+
+  if (englishScore > uzbekScore) {
+    return 'english'
+  }
+
+  return locale === 'en' ? 'english' : "o'zbek"
+}
+
+const buildSystemPrompt = (destinationContext, responseLanguage = "o'zbek") => {
 
   return `
 Siz "Premium Travel AI" nomli premium sayohat yordamchisiz.
@@ -134,7 +195,7 @@ Platformadagi real joylar bazasi:
 ${JSON.stringify(destinationContext, null, 2)}
 
 Qoidalar:
-1. Doimo ${responseLanguage} tilida, xushmuomala va aniq uslubda javob bering.
+1. Oxirgi foydalanuvchi xabari qaysi tilda yozilgan bo'lsa, aynan o'sha tilda javob bering. Hozirgi xabar uchun javob tili: ${responseLanguage}.
 2. Iloji bo'lsa, javoblarni yuqoridagi real ma'lumotlarga tayang.
 3. Agar ma'lumot bazada bo'lmasa, buni ochiq ayting va foydali umumiy tavsiya bering.
 4. Javoblarni o'qish oson bo'lsin: qisqa abzatslar, punktlar va aniq tavsiyalar ishlating.
@@ -147,6 +208,7 @@ Qoidalar:
 export const getAIResponse = async (userMessage, history = [], options = {}) => {
   const trimmedMessage = userMessage?.trim();
   const locale = options.locale === 'en' ? 'en' : 'uz'
+  const responseLanguage = detectPreferredResponseLanguage(trimmedMessage, locale)
 
   if (!trimmedMessage) {
     return "Savol matni bo'sh bo'lmasligi kerak.";
@@ -171,7 +233,7 @@ export const getAIResponse = async (userMessage, history = [], options = {}) => 
         },
       ],
       config: {
-        systemInstruction: buildSystemPrompt(destinationContext, locale),
+        systemInstruction: buildSystemPrompt(destinationContext, responseLanguage),
       },
     });
 
