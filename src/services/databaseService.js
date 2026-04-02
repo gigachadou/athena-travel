@@ -468,9 +468,19 @@ export const fetchUserTicketById = async ({ ticketId, userId }) => {
 
 export const createTicketInDB = async (ticketData) => {
   const client = requireSupabase()
+  
+  // Real ticket ID generation: AF-XXXXXX
+  const realTicketId = `AF-${Math.floor(Math.random() * 900000 + 100000)}`
+  
+  const payload = {
+    ...ticketData,
+    ticket_id: realTicketId,
+    status: ticketData.status || 'checking'
+  }
+  
   const { data, error } = await client
     .from('tickets')
-    .insert([ticketData])
+    .insert([payload])
     .select()
     .single()
 

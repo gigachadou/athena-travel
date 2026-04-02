@@ -1,5 +1,6 @@
 import React from 'react'
-import { X, Calendar, MapPin, User, ChevronRight, Ticket as TicketIcon } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
+import { X, Calendar, MapPin, User, ChevronRight, Ticket as TicketIcon, ArrowLeft } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import '../styles/BookingTicket.css'
 import { useAuth } from '../context/AuthContext'
@@ -7,8 +8,14 @@ import { useAuth } from '../context/AuthContext'
 const BookingTicket = ({ place, onClose }) => {
   const { t, i18n } = useTranslation()
   const { user } = useAuth()
+  const navigate = useNavigate()
   const userName = user?.fullName || user?.username || 'Sayohatchi'
   const currentDate = new Date().toLocaleDateString(i18n.language === 'uz' ? 'uz-UZ' : 'en-US', { day: 'numeric', month: 'long', year: 'numeric' })
+
+  const handleBookNow = () => {
+    onClose();
+    navigate(`/ticket/${place.id}`);
+  }
 
   return (
     <div className="ticket-overlay glass-full fade-in" onClick={onClose}>
@@ -24,7 +31,7 @@ const BookingTicket = ({ place, onClose }) => {
                 <TicketIcon size={24} className="icon-gold" />
                 <span>AFINA PREMIUM</span>
               </div>
-              <div className="ticket-id">#AF-{Math.floor(Math.random() * 9000) + 1000}</div>
+              <div className="ticket-id">PROPOSAL</div>
             </div>
 
             <div className="ticket-body">
@@ -69,12 +76,12 @@ const BookingTicket = ({ place, onClose }) => {
 
               <div className="ticket-footer">
                 <div className="qr-section">
-                  <div className="qr-mock">
+                  <div className="qr-mock preview-qr">
                     {[...Array(16)].map((_, i) => (
                       <div key={i} className="qr-bit" style={{ opacity: Math.random() }}></div>
                     ))}
                   </div>
-                  <p>{t('scanner_text')}</p>
+                  <p>CHIPTA PREVYEW</p>
                 </div>
                 <div className="price-section">
                     <div className="label">{t('price')}</div>
@@ -87,9 +94,14 @@ const BookingTicket = ({ place, onClose }) => {
           </div>
         </div>
 
-        <button className="btn-confirm-booking btn-primary" onClick={onClose}>
-          {t('book_now')} <ChevronRight size={18} />
-        </button>
+        <div className="ticket-actions-group">
+            <button className="btn-cancel-ticket" onClick={onClose}>
+                <ArrowLeft size={18} /> Orqaga qaytish
+            </button>
+            <button className="btn-confirm-booking btn-primary" onClick={handleBookNow}>
+                {t('book_now')} <ChevronRight size={18} />
+            </button>
+        </div>
       </div>
     </div>
   )
