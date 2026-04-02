@@ -6,7 +6,7 @@ Demo version of Athena Travel website
 # There are several .sql files showing how database should be structured 
 
 ## Installation guide:
-bash```
+```bash
 #clone the repository
 git clone https://github.com/gigachadou/athena-travel.git
 #install packages
