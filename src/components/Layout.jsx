@@ -3,12 +3,9 @@ import { Outlet, useLocation } from 'react-router-dom'
 import { Header, Footer } from './Navigation'
 
 const Layout = () => {
-  const location = useLocation()
-  const isPlacePage = location.pathname.startsWith('/place/')
-
   return (
     <div className="layout">
-      {!isPlacePage && <Header />}
+      <Header />
       <main className="main-content container">
         <Outlet />
       </main>
@@ -24,6 +21,10 @@ const Layout = () => {
           flex: 1;
           padding: 20px;
           animation: fadeIn 0.5s ease-out;
+        }
+        .full-map-content {
+          padding: 0 !important;
+          max-width: none !important;
         }
       `}</style>
     </div>
