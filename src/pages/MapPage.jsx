@@ -12,7 +12,7 @@ import {
   ZoomIn, ZoomOut, Crosshair, AlertCircle, CheckCircle2,
   Info, Map, Landmark, Hotel, Utensils, Car, HeartPulse,
   ShoppingBag, Bus, LayoutGrid, RefreshCw, Globe, Phone,
-  Loader
+  Loader, ChevronLeft
 } from 'lucide-react'
 import Loading from '../components/Loading'
 import { useTranslation } from 'react-i18next'
@@ -286,11 +286,11 @@ const MapPage = () => {
   return (
     <div className="map-page fade-in">
 
-      {/* ── Top Bar ──────────────────────────────────────────────────────── */}
+      {/* ── Top Bar (Floating) ────────────────────────────────────────── */}
       <div className="map-top-bar glass animate-up">
-        <div className="map-header-left">
+        <div className="map-header-left" onClick={() => navigate('/')} style={{ cursor: 'pointer' }}>
           <div className="icon-box-map">
-            <Compass size={22} className="spin-slow" />
+            <ChevronLeft size={22} />
           </div>
           <div>
             <h3 className="map-title">Interaktiv Xarita</h3>
@@ -349,25 +349,25 @@ const MapPage = () => {
         </div>
       </div>
 
-      {/* ── Geo/Fetch Toasts ──────────────────────────────────────────────── */}
+      {/* ── Geo/Fetch Toasts (Centered & Floating) ───────────────────────── */}
       {(geoStatus === 'success' || geoStatus === 'error') && (
-        <div className={`geo-toast geo-toast-${geoStatus}`}>
+        <div className={`geo-toast ${geoStatus === 'error' ? 'geo-toast-error' : ''}`}>
           {geoStatus === 'success'
-            ? <><CheckCircle2 size={15} /> Joylashuvingiz aniqlandi!</>
-            : <><AlertCircle  size={15} /> GPS aniqlanmadi — standart joy ishlatilmoqda.</>
+            ? <><CheckCircle2 size={16} /> {t('location_found') || 'Joylashuv aniqlandi!'}</>
+            : <><AlertCircle  size={16} /> {t('location_not_found') || 'GPS aniqlanmadi — standart joy ishlatilmoqda.'}</>
           }
         </div>
       )}
       {fetchStatus === 'error' && (
         <div className="geo-toast geo-toast-error">
-          <AlertCircle size={15} />
-          OpenStreetMap dan ma'lumot olinmadi. Internet aloqasini tekshiring.
-          <button className="toast-retry-btn" onClick={handleRefresh}>Qayta urinish</button>
+          <AlertCircle size={16} />
+          {t('osm_fetch_error') || 'Xaritadan ma\'lumot olinmadi. Internetni tekshiring.'}
+          <button className="toast-retry-btn" onClick={handleRefresh}>{t('retry') || 'Qayta'}</button>
         </div>
       )}
 
-      {/* ── Category Filter ───────────────────────────────────────────────── */}
-      <div className="category-filter glass animate-up no-scrollbar">
+      {/* ── Category Filter (Floating) ────────────────────────────────────── */}
+      <div className="category-filter animate-up no-scrollbar">
         {CATEGORIES.map(({ id, label, Icon }) => {
           const cnt = id === 'all' ? places.length : countOf(id)
           return (
@@ -387,261 +387,252 @@ const MapPage = () => {
         })}
       </div>
 
-      {/* ── Map + Sidebar Row ─────────────────────────────────────────────── */}
-      <div className="map-content-row">
+      {/* ── Floating Sidebar (Drawer/Card) ─────────────────────────────────── */}
+      <div className={`map-sidebar glass ${selectedLoc ? 'open' : ''}`}>
+        {selectedLoc ? (() => {
+          const cfg     = TYPE_CONFIG[selectedLoc.type]
+          const TypeIcon = cfg?.Icon || MapPin
+          return (
+            <div className="sidebar-inner">
+              <button className="sidebar-close" onClick={handleClose}><X size={16} /></button>
 
-        {/* Sidebar */}
-        <div className={`map-sidebar glass ${selectedLoc ? 'open' : ''}`}>
-          {selectedLoc ? (() => {
-            const cfg     = TYPE_CONFIG[selectedLoc.type]
-            const TypeIcon = cfg?.Icon || MapPin
-            return (
-              <div className="sidebar-inner">
-                <button className="sidebar-close" onClick={handleClose}><X size={16} /></button>
+              <div className="sb-badge" style={{ background: cfg?.bg, color: cfg?.color }}>
+                <TypeIcon size={12} strokeWidth={2.5} /> {cfg?.label}
+              </div>
 
-                <div className="sb-badge" style={{ background: cfg?.bg, color: cfg?.color }}>
-                  <TypeIcon size={12} strokeWidth={2.5} /> {cfg?.label}
+              <h3 className="sb-name">{selectedLoc.name}</h3>
+              <p className="sb-desc">{selectedLoc.desc}</p>
+
+              <div className="sb-info-grid">
+                <div className="sb-info-item">
+                  <Star size={13} fill="#f59e0b" color="#f59e0b" />
+                  <span>{selectedLoc.rating ?? 'N/A'}</span>
                 </div>
-
-                <h3 className="sb-name">{selectedLoc.name}</h3>
-                <p className="sb-desc">{selectedLoc.desc}</p>
-
-                <div className="sb-info-grid">
+                <div className="sb-info-item">
+                  <Clock size={13} />
+                  <span>{selectedLoc.open}</span>
+                </div>
+                {routeInfo && <>
                   <div className="sb-info-item">
-                    <Star size={13} fill="#f59e0b" color="#f59e0b" />
-                    <span>{selectedLoc.rating ?? 'N/A'}</span>
+                    <Route size={13} />
+                    <span>{routeInfo.distance} km</span>
                   </div>
                   <div className="sb-info-item">
-                    <Clock size={13} />
-                    <span>{selectedLoc.open}</span>
+                    <Navigation size={13} />
+                    <span>~{routeInfo.duration} daq.</span>
                   </div>
-                  {routeInfo && <>
-                    <div className="sb-info-item">
-                      <Route size={13} />
-                      <span>{routeInfo.distance} km</span>
-                    </div>
-                    <div className="sb-info-item">
-                      <Navigation size={13} />
-                      <span>~{routeInfo.duration} daq.</span>
-                    </div>
-                  </>}
-                </div>
+                </>}
+              </div>
 
-                {/* Extra: website + phone if available */}
-                {selectedLoc.website && (
-                  <a className="sb-link" href={selectedLoc.website} target="_blank" rel="noreferrer">
-                    <Globe size={13} /> {selectedLoc.website.replace(/^https?:\/\//, '')}
-                  </a>
-                )}
-                {selectedLoc.phone && (
-                  <a className="sb-link" href={`tel:${selectedLoc.phone}`}>
-                    <Phone size={13} /> {selectedLoc.phone}
-                  </a>
-                )}
+              {/* Extra: website + phone if available */}
+              {selectedLoc.website && (
+                <a className="sb-link" href={selectedLoc.website} target="_blank" rel="noreferrer">
+                  <Globe size={13} /> {selectedLoc.website.replace(/^https?:\/\//, '')}
+                </a>
+              )}
+              {selectedLoc.phone && (
+                <a className="sb-link" href={`tel:${selectedLoc.phone}`}>
+                  <Phone size={13} /> {selectedLoc.phone}
+                </a>
+              )}
 
-                <div className="sb-coords">
-                  <MapPin size={11} />
-                  {selectedLoc.coords[0].toFixed(5)}, {selectedLoc.coords[1].toFixed(5)}
-                </div>
+              <div className="sb-coords">
+                <MapPin size={11} />
+                {selectedLoc.coords[0].toFixed(5)}, {selectedLoc.coords[1].toFixed(5)}
+              </div>
 
-                <div className="sb-dist">
-                  <Route size={13} />
-                  Sizdan <strong>{calcDistance(origin, selectedLoc.coords)} km</strong> uzoqda
-                </div>
+              <div className="sb-dist">
+                <Route size={13} />
+                Sizdan <strong>{calcDistance(origin, selectedLoc.coords)} km</strong> uzoqda
+              </div>
 
-                <div className="sb-actions">
-                  {['landmark','hotel','restaurant'].includes(selectedLoc.type) && (
-                    <button className="sb-btn-primary" onClick={() => navigate(`/place/${selectedLoc.id}`)}>
-                      <Info size={14} /> Batafsil ko'rish
-                    </button>
-                  )}
-                  <button
-                    className="sb-btn-secondary"
-                    onClick={() => setFlyTo({ pos: selectedLoc.coords, id: Date.now() })}
-                  >
-                    <Target size={14} /> Xaritada ko'rsat
+              <div className="sb-actions">
+                {['landmark','hotel','restaurant'].includes(selectedLoc.type) && (
+                  <button className="sb-btn-primary" onClick={() => navigate(`/place/${selectedLoc.id}`)}>
+                    <Info size={14} /> Batafsil ko'rish
                   </button>
-                  <a
-                    className="sb-btn-osm"
-                    href={`https://www.openstreetmap.org/${selectedLoc.osmType}/${selectedLoc.osmId}`}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    <Map size={13} /> OSM da ko'rish
-                  </a>
-                </div>
+                )}
+                <button
+                  className="sb-btn-secondary"
+                  onClick={() => setFlyTo({ pos: selectedLoc.coords, id: Date.now() })}
+                >
+                  <Target size={14} /> Xaritada ko'rsat
+                </button>
+                <a
+                  className="sb-btn-osm"
+                  href={`https://www.openstreetmap.org/${selectedLoc.osmType}/${selectedLoc.osmId}`}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  <Map size={13} /> OSM da ko'rish
+                </a>
+              </div>
 
-                <div className="sb-source">
-                  <Map size={11} /> OpenStreetMap
-                </div>
+              <div className="sb-source">
+                <Map size={11} /> OpenStreetMap
               </div>
-            )
-          })() : (
-            <div className="sidebar-placeholder">
-              <div className="ph-icon-wrap">
-                <Map size={34} strokeWidth={1.5} color="var(--primary-blue)" />
-              </div>
-              <p className="ph-text">Xaritadan joy tanlang va to'liq ma'lumot oling</p>
-              {fetchStatus === 'done' && (
-                <div className="ph-stats">
-                  {CATEGORIES.filter(c => c.id !== 'all').map(({ id, Icon }) => {
-                    const cfg = TYPE_CONFIG[id]
-                    const cnt = countOf(id)
-                    if (!cnt) return null
-                    return (
-                      <button
-                        key={id}
-                        className="ph-chip"
-                        onClick={() => setFilter(id)}
-                        style={{ background: cfg?.bg, color: cfg?.color }}
-                      >
-                        <Icon size={11} strokeWidth={2.5} /> {cnt}
-                      </button>
-                    )
-                  })}
-                </div>
-              )}
-              {fetchedAt && (
-                <p className="ph-updated">
-                  <RefreshCw size={10} /> {fetchedAt.toLocaleTimeString('uz-UZ')} da yangilangan
-                </p>
-              )}
             </div>
-          )}
-        </div>
+          )
+        })() : (
+          <div className="sidebar-placeholder">
+            <div className="ph-icon-wrap">
+              <Map size={34} strokeWidth={1.5} color="var(--primary-blue)" />
+            </div>
+            <p className="ph-text">Xaritadan joy tanlang va to'liq ma'lumot oling</p>
+            {fetchStatus === 'done' && (
+              <div className="ph-stats">
+                {CATEGORIES.filter(c => c.id !== 'all').map(({ id, Icon }) => {
+                  const cfg = TYPE_CONFIG[id]
+                  const cnt = countOf(id)
+                  if (!cnt) return null
+                  return (
+                    <button
+                      key={id}
+                      className="ph-chip"
+                      onClick={() => setFilter(id)}
+                      style={{ background: cfg?.bg, color: cfg?.color }}
+                    >
+                      <Icon size={11} strokeWidth={2.5} /> {cnt}
+                    </button>
+                  )
+                })}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
 
-        {/* Map */}
-        <div className="map-wrapper animate-up">
-          <MapContainer
-            center={mapCenter}
-            zoom={6}
-            scrollWheelZoom
-            zoomControl={false}
-            style={{ height: '100%', width: '100%' }}
-          >
-            <TileLayer
-              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-              url={getTileUrl(mapLayer, isDarkMode)}
-            />
-            <MapClickHandler onMapClick={pos => setMapCenter(pos)} />
-            {flyTo && <FlyToLocation position={flyTo.pos} />}
-            <ZoomControls />
+      {/* ── Map Wrapper (Background) ─────────────────────────────────────── */}
+      <div className="map-wrapper animate-up">
+        <MapContainer
+          center={mapCenter}
+          zoom={6}
+          scrollWheelZoom
+          zoomControl={false}
+          style={{ height: '100%', width: '100%' }}
+        >
+          <TileLayer
+            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+            url={getTileUrl(mapLayer, isDarkMode)}
+          />
+          <MapClickHandler onMapClick={pos => setMapCenter(pos)} />
+          {flyTo && <FlyToLocation position={flyTo.pos} />}
+          <ZoomControls />
 
-            {/* User marker */}
-            {userLocation ? (
-              <>
-                <Circle
-                  center={userLocation}
-                  radius={300}
-                  pathOptions={{ color: '#f59e0b', fillColor: '#f59e0b', fillOpacity: 0.06, weight: 2, dashArray: '4,7' }}
-                />
-                <Marker position={userLocation} icon={getIcon('user')}>
-                  <Popup>
-                    <div className="map-popup">
-                      <div className="type-badge" style={{ background: '#fef3c7', color: '#92400e' }}>
-                        <Navigation size={11} strokeWidth={2.5} /> Sizning joylashuvingiz
-                      </div>
-                      <p className="popup-coords">{userLocation[0].toFixed(5)}, {userLocation[1].toFixed(5)}</p>
-                    </div>
-                  </Popup>
-                </Marker>
-              </>
-            ) : (
-              <Marker position={mapCenter} icon={getIcon('user')}>
+          {/* User marker */}
+          {userLocation ? (
+            <>
+              <Circle
+                center={userLocation}
+                radius={300}
+                pathOptions={{ color: '#f59e0b', fillColor: '#f59e0b', fillOpacity: 0.06, weight: 2, dashArray: '4,7' }}
+              />
+              <Marker position={userLocation} icon={getIcon('user')}>
                 <Popup>
                   <div className="map-popup">
                     <div className="type-badge" style={{ background: '#fef3c7', color: '#92400e' }}>
-                      <MapPin size={11} /> Standart joylashuv
+                      <Navigation size={11} strokeWidth={2.5} /> Sizning joylashuvingiz
                     </div>
-                    <p className="popup-coords">GPS aniqlanmadi. GPS tugmasini bosing.</p>
+                    <p className="popup-coords">{userLocation[0].toFixed(5)}, {userLocation[1].toFixed(5)}</p>
                   </div>
                 </Popup>
               </Marker>
-            )}
-
-            {/* Location markers from OSM */}
-            {filtered.map(loc => {
-              const cfg     = TYPE_CONFIG[loc.type]
-              const TypeIcon = cfg?.Icon || MapPin
-              return (
-                <Marker
-                  key={loc.id}
-                  position={loc.coords}
-                  icon={getIcon(loc.type)}
-                  eventHandlers={{ click: () => handleSelect(loc) }}
-                >
-                  <Tooltip direction="top" offset={[0, -34]} opacity={1} className="custom-tooltip">
-                    <div className="map-hover-tip">
-                      <div className="tip-tag" style={{ background: cfg?.bg, color: cfg?.color }}>
-                        <TypeIcon size={11} strokeWidth={2.5} /> {cfg?.label}
-                      </div>
-                      <strong className="tip-name">{loc.name}</strong>
-                      <StarRow rating={loc.rating} />
-                      <div className="tip-dist">
-                        <Route size={11} /> {calcDistance(origin, loc.coords)} km
-                      </div>
-                      <div className="tip-foot">Bosing – batafsil</div>
-                    </div>
-                  </Tooltip>
-
-                  <Popup>
-                    <div className="map-popup">
-                      <div className="type-badge" style={{ background: cfg?.bg, color: cfg?.color }}>
-                        <TypeIcon size={11} strokeWidth={2.5} /> {cfg?.label}
-                      </div>
-                      <h4>{loc.name}</h4>
-                      <p className="popup-desc">{loc.desc}</p>
-                      <div className="popup-meta">
-                        <span><Star size={11} fill={loc.rating ? '#f59e0b' : 'none'} color="#f59e0b" /> {loc.rating ?? '—'}</span>
-                        <span><Clock size={11} /> {loc.open}</span>
-                      </div>
-                      <div className="popup-dist">
-                        <Route size={11} /> {calcDistance(origin, loc.coords)} km uzoqda
-                      </div>
-                      <button className="btn-popup-details" onClick={() => handleSelect(loc)}>
-                        Ko'proq <ChevronRight size={13} />
-                      </button>
-                    </div>
-                  </Popup>
-                </Marker>
-              )
-            })}
-
-            {/* Route */}
-            {route && selectedLoc && (
-              <Polyline
-                positions={route}
-                color={routeColor(selectedLoc.type)}
-                weight={5}
-                dashArray="2,10"
-                opacity={0.85}
-              />
-            )}
-          </MapContainer>
-
-          {/* Loading overlay */}
-          {fetchStatus === 'loading' && <LoadingOverlay />}
-
-          {/* Layer badge */}
-          <div className="map-layer-badge">
-            <Map size={11} /> {LAYER_LABELS[mapLayer]}
-          </div>
-
-          {/* Route pill */}
-          {selectedLoc && routeInfo && (
-            <div className="route-info-pill">
-              <div className="rip-item"><Route size={13} /> {routeInfo.distance} km</div>
-              <div className="rip-sep" />
-              <div className="rip-item"><Navigation size={13} /> ~{routeInfo.duration} daq.</div>
-              <div className="rip-sep" />
-              <div className="rip-item" style={{ color: TYPE_CONFIG[selectedLoc.type]?.color }}>
-                {React.createElement(TYPE_CONFIG[selectedLoc.type]?.Icon || MapPin, { size: 13, strokeWidth: 2.5 })}
-                {selectedLoc.name}
-              </div>
-              <button className="rip-close" onClick={handleClose}><X size={13} /></button>
-            </div>
+            </>
+          ) : (
+            <Marker position={mapCenter} icon={getIcon('user')}>
+              <Popup>
+                <div className="map-popup">
+                  <div className="type-badge" style={{ background: '#fef3c7', color: '#92400e' }}>
+                    <MapPin size={11} /> Standart joylashuv
+                  </div>
+                  <p className="popup-coords">GPS aniqlanmadi. GPS tugmasini bosing.</p>
+                </div>
+              </Popup>
+            </Marker>
           )}
+
+          {/* Location markers from OSM */}
+          {filtered.map(loc => {
+            const cfg     = TYPE_CONFIG[loc.type]
+            const TypeIcon = cfg?.Icon || MapPin
+            return (
+              <Marker
+                key={loc.id}
+                position={loc.coords}
+                icon={getIcon(loc.type)}
+                eventHandlers={{ click: () => handleSelect(loc) }}
+              >
+                <Tooltip direction="top" offset={[0, -34]} opacity={1} className="custom-tooltip">
+                  <div className="map-hover-tip">
+                    <div className="tip-tag" style={{ background: cfg?.bg, color: cfg?.color }}>
+                      <TypeIcon size={11} strokeWidth={2.5} /> {cfg?.label}
+                    </div>
+                    <strong className="tip-name">{loc.name}</strong>
+                    <StarRow rating={loc.rating} />
+                    <div className="tip-dist">
+                      <Route size={11} /> {calcDistance(origin, loc.coords)} km
+                    </div>
+                    <div className="tip-foot">Bosing – batafsil</div>
+                  </div>
+                </Tooltip>
+
+                <Popup>
+                  <div className="map-popup">
+                    <div className="type-badge" style={{ background: cfg?.bg, color: cfg?.color }}>
+                      <TypeIcon size={11} strokeWidth={2.5} /> {cfg?.label}
+                    </div>
+                    <h4>{loc.name}</h4>
+                    <p className="popup-desc">{loc.desc}</p>
+                    <div className="popup-meta">
+                      <span><Star size={11} fill={loc.rating ? '#f59e0b' : 'none'} color="#f59e0b" /> {loc.rating ?? '—'}</span>
+                      <span><Clock size={11} /> {loc.open}</span>
+                    </div>
+                    <div className="popup-dist">
+                      <Route size={11} /> {calcDistance(origin, loc.coords)} km uzoqda
+                    </div>
+                    <button className="btn-popup-details" onClick={() => handleSelect(loc)}>
+                      Ko'proq <ChevronRight size={13} />
+                    </button>
+                  </div>
+                </Popup>
+              </Marker>
+            )
+          })}
+
+          {/* Route */}
+          {route && selectedLoc && (
+            <Polyline
+              positions={route}
+              color={routeColor(selectedLoc.type)}
+              weight={5}
+              dashArray="2,10"
+              opacity={0.85}
+            />
+          )}
+        </MapContainer>
+
+        {/* Loading overlay */}
+        {fetchStatus === 'loading' && <LoadingOverlay />}
+
+        {/* Layer badge */}
+        <div className="map-layer-badge">
+          <Map size={11} /> {LAYER_LABELS[mapLayer]}
         </div>
+
+        {/* Route pill */}
+        {selectedLoc && routeInfo && (
+          <div className="route-info-pill">
+            <div className="rip-item"><Route size={13} /> {routeInfo.distance} km</div>
+            <div className="rip-sep" />
+            <div className="rip-item"><Navigation size={13} /> ~{routeInfo.duration} daq.</div>
+            <div className="rip-sep" />
+            <div className="rip-item" style={{ color: TYPE_CONFIG[selectedLoc.type]?.color }}>
+              {React.createElement(TYPE_CONFIG[selectedLoc.type]?.Icon || MapPin, { size: 13, strokeWidth: 2.5 })}
+              {selectedLoc.name}
+            </div>
+            <button className="rip-close" onClick={handleClose}><X size={13} /></button>
+          </div>
+        )}
       </div>
     </div>
   )
