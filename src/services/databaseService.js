@@ -5,6 +5,7 @@ const FALLBACK_IMAGE =
   'https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=1200'
 
 const numberFormatter = new Intl.NumberFormat('en-US')
+const REQUEST_TIMEOUT_MS = 8000
 
 const getEmailRedirectTo = () => {
   if (typeof window === 'undefined') return undefined
@@ -18,6 +19,36 @@ const requireSupabase = () => {
 
   return supabase
 }
+
+const withTimeout = async (promise, message = "Supabase so'rovi juda sekin ishladi.") => {
+  let timeoutId
+
+  const timeoutPromise = new Promise((_, reject) => {
+    timeoutId = setTimeout(() => reject(new Error(message)), REQUEST_TIMEOUT_MS)
+  })
+
+  try {
+    return await Promise.race([promise, timeoutPromise])
+  } finally {
+    clearTimeout(timeoutId)
+  }
+}
+
+const attachSource = (item, source) => ({
+  ...item,
+  __source: source,
+})
+
+const buildMockPlaces = () =>
+  SURKHANDARYA_POSTS.map((post) =>
+    attachSource(
+      {
+        ...post,
+        priceValue: Number(post.price.toString().replace(/[^0-9]/g, '')) || 0,
+      },
+      'mock'
+    )
+  )
 
 export const formatPrice = (value) => {
   const amount = Number(value ?? 0)
@@ -71,43 +102,49 @@ export const normalizePlaceAiText = (row) => {
 export const fetchPlaces = async () => {
   try {
     const client = requireSupabase()
-    const { data, error } = await client
-      .from('places')
-      .select('*')
-      .order('created_at', { ascending: false })
+    const { data, error } = await withTimeout(
+      client
+        .from('places')
+        .select('*')
+        .order('created_at', { ascending: false }),
+      "Supabase'dan joylarni olish juda sekin ishladi."
+    )
 
     if (error) throw error
-    return (data || []).map(normalizePlace)
+    return (data || []).map((row) => attachSource(normalizePlace(row), 'supabase'))
   } catch (err) {
-    console.warn("Supabase fetch xatosi, mock data ishlatilmoqda:", err.message)
-    return SURKHANDARYA_POSTS.map(post => ({
-      ...post,
-      priceValue: Number(post.price.toString().replace(/[^0-9]/g, '')) || 0
-    }))
+    console.warn('Supabase fetch xatosi, mock data ishlatilmoqda:', err)
+    return buildMockPlaces()
   }
 }
 
 export const fetchPlaceById = async (id) => {
   try {
     const client = requireSupabase()
-    const { data, error } = await client
-      .from('places')
-      .select('*')
-      .eq('id', id)
-      .maybeSingle()
+    const { data, error } = await withTimeout(
+      client
+        .from('places')
+        .select('*')
+        .eq('id', id)
+        .maybeSingle(),
+      "Supabase'dan joy ma'lumotini olish juda sekin ishladi."
+    )
 
     if (error) throw error
-    if (data) return normalizePlace(data)
+    if (data) return attachSource(normalizePlace(data), 'supabase')
   } catch (err) {
-    console.warn("Supabase fetch xatosi, mock data ishlatilmoqda:", err.message)
+    console.warn('Supabase fetch xatosi, mock data ishlatilmoqda:', err)
   }
 
   const mockPlace = SURKHANDARYA_POSTS.find(p => p.id === id)
   if (mockPlace) {
-    return {
-      ...mockPlace,
-      priceValue: Number(mockPlace.price.toString().replace(/[^0-9]/g, '')) || 0
-    }
+    return attachSource(
+      {
+        ...mockPlace,
+        priceValue: Number(mockPlace.price.toString().replace(/[^0-9]/g, '')) || 0,
+      },
+      'mock'
+    )
   }
   return null
 }

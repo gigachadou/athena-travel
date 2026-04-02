@@ -14,6 +14,7 @@ const SearchPage = () => {
   const [places, setPlaces] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [dataSource, setDataSource] = useState('supabase')
   const [filters, setFilters] = useState(createDefaultFilters())
   const { t } = useTranslation()
 
@@ -29,6 +30,10 @@ const SearchPage = () => {
       try {
         const data = await fetchPlaces()
         setPlaces(data)
+        setDataSource(data[0]?.__source || 'supabase')
+        if (data[0]?.__source === 'mock') {
+          setError("Supabase ulanmayapti, hozircha mock data ko'rsatilmoqda.")
+        }
         setFilters(createDefaultFilters(Math.max(...data.map((place) => place.priceValue), 0)))
       } catch (err) {
         console.error('Failed to load places:', err)
@@ -100,6 +105,11 @@ const SearchPage = () => {
       )}
 
       <div className="search-results">
+        {dataSource === 'mock' && (
+          <div className="glass animate-up" style={{ padding: '14px 18px', borderRadius: '18px', marginBottom: '20px', color: '#9a3412', background: 'rgba(251, 191, 36, 0.14)', border: '1px solid rgba(251, 191, 36, 0.35)' }}>
+            Jonli Supabase ma'lumotlari o'rniga vaqtincha local mock data ko'rsatilmoqda.
+          </div>
+        )}
         <div className="results-header animate-up">
           <h3>{t('results_found')} <span className="results-count">({filteredPosts.length})</span></h3>
         </div>
