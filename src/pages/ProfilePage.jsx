@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { User, Settings as SettingsIcon, Bell, Shield, LogOut, Trash2, ChevronRight, Camera, X, Check, Moon, Sun, Globe } from 'lucide-react'
+import { User, Settings as SettingsIcon, Bell, Shield, LogOut, Trash2, ChevronRight, Camera, X, Check, Moon, Sun, Globe, Ticket as TicketIcon } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import '../styles/ProfilePage.css'
 import Loading from '../components/Loading'
@@ -268,6 +268,16 @@ const ProfilePage = () => {
       </div>
 
       <div className="settings-list">
+        <div className="setting-item glass" onClick={() => navigate('/tickets')}>
+          <div className="setting-icon" style={{ background: 'rgba(255, 184, 0, 0.1)', color: 'var(--accent-gold)' }}>
+            <TicketIcon size={20} />
+          </div>
+          <div className="setting-info">
+            <h4>Mening chiptalarim</h4>
+            <p>Barcha faol va yakunlangan buyurtmalar</p>
+          </div>
+          <ChevronRight size={18} className="chevron" />
+        </div>
         <div className="setting-item glass" onClick={() => setActiveTab('settings')}>
           <div className="setting-icon"><SettingsIcon size={20} /></div>
           <div className="setting-info">

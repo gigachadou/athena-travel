@@ -208,17 +208,24 @@ const ThisPlacePage = () => {
 
   return (
     <div className="place-details-page fade-in">
-      <div className="details-header animate-up">
-        <button onClick={() => navigate(-1)} className="btn-icon-back glass">
-          <ArrowLeft size={24} />
-        </button>
-        <div className="header-actions">
-          <button onClick={handleFavoriteToggle} disabled={favoriteBusy} className={`btn-icon-action glass ${isLiked ? 'liked' : ''}`}>
-            <Heart size={24} fill={isLiked ? '#ff4757' : 'none'} />
-          </button>
-          <button className="book-btn btn-accent" onClick={handleBookingClick}>
-            {t('book_now', 'Hozir band qilish')}
-          </button>
+      <div className="details-header premium-header animate-up">
+        <div className="header-left">
+           <button onClick={() => navigate(-1)} className="btn-icon-back glass">
+              <ArrowLeft size={24} />
+           </button>
+           <div className="header-logo" onClick={() => navigate('/')}>
+              <span className="premium">Afina</span>
+              <span className="platform">Travel</span>
+           </div>
+        </div>
+        
+        <div className="header-right">
+           <button onClick={handleFavoriteToggle} disabled={favoriteBusy} className={`btn-icon-action glass ${isLiked ? 'liked' : ''}`}>
+             <Heart size={22} fill={isLiked ? '#ff4757' : 'none'} />
+           </button>
+           <button className="book-btn-premium" onClick={handleBookingClick}>
+             {t('book_now', 'Band qilish')}
+           </button>
         </div>
       </div>
 
@@ -241,7 +248,7 @@ const ThisPlacePage = () => {
           </div>
           <div className="rating-badge-premium glass-full">
             <Star size={16} fill="var(--accent-gold)" stroke="var(--accent-gold)" />
-            <span>{placeData.meta?.rating?.toFixed(1) || '0.0'}</span>
+            <span>{Number(placeData.meta?.rating || 0).toFixed(1)}</span>
           </div>
         </div>
 

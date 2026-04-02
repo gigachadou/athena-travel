@@ -1,357 +1,420 @@
 .ticket-page {
-  padding: 40px 20px 120px;
-  background: var(--bg-main) !important;
-  display: flex;
-  justify-content: center;
+  padding: 100px 20px 60px;
+  min-height: 100vh;
+  background: radial-gradient(circle at 10% 10%, rgba(255, 180, 0, 0.05) 0%, transparent 40%),
+              radial-gradient(circle at 90% 90%, rgba(12, 168, 255, 0.05) 0%, transparent 40%);
 }
 
-.ticket-shell {
-  width: 100%;
-  max-width: 1024px;
-  display: flex;
-  flex-direction: column;
-  gap: 30px;
-}
-
-.ticket-top {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.ticket-layout-modern {
+.booking-layout {
   display: grid;
-  grid-template-columns: 350px 1fr;
+  grid-template-columns: 1fr 380px;
   gap: 30px;
   align-items: start;
 }
 
-.card {
-  border-radius: 20px;
-  padding: 24px;
-  background: var(--glass-bg);
+/* Stepper */
+.booking-stepper-premium {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  margin-bottom: 40px;
+  background: var(--glass-card);
+  padding: 20px 30px;
+  border-radius: 24px;
   border: 1px solid var(--glass-border);
-  box-shadow: var(--shadow-md);
 }
 
-.booking-form {
+.step-item {
   display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.form-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16px;
-}
-
-.input-field {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  font-size: 13px;
+  align-items: center;
+  gap: 12px;
+  color: var(--text-muted);
   font-weight: 700;
-  color: var(--text-dark);
+  font-size: 14px;
 }
 
-.input-shell {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 12px 14px;
-  background: rgba(255, 255, 255, 0.7);
-  border: 1px solid var(--glass-border);
+.step-icon {
+  width: 38px;
+  height: 38px;
   border-radius: 12px;
-}
-
-.input-shell input, .input-shell select, .input-shell textarea {
-  width: 100%;
-  border: none;
-  background: transparent;
-  color: var(--text-dark);
-  font-size: 15px;
-  outline: none;
-}
-
-.submit-btn {
-  width: 100%;
-  padding: 16px;
-  border-radius: 16px;
-  font-size: 16px;
-  font-weight: 800;
+  background: rgba(0,0,0,0.05);
   display: flex;
-  justify-content: center;
   align-items: center;
-  gap: 8px;
+  justify-content: center;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* ========================================= */
-/* TRAIN TICKET MATCHING THE IMAGE EXACTLY   */
-/* ========================================= */
-
-.train-ticket {
-  position: relative;
-  display: flex;
-  background: #fbf7f0; /* The cream background */
-  border-radius: 8px;
-  overflow: hidden;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08); /* slight soft shadow */
-  font-family: 'Inter', sans-serif; /* Modern sans-serif */
-  color: #1a1a1a;
-  min-height: 280px;
+.step-item.active {
+  color: var(--accent-gold);
 }
 
-/* The perforation line between left and right blocks */
-.perforation-line {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  right: 250px; /* Width of right section */
-  width: 2px;
-  border-right: 2px dashed #000;
-  z-index: 10;
+.step-item.active .step-icon {
+  background: var(--accent-gold);
+  color: #0f172a;
+  box-shadow: 0 0 20px var(--accent-gold-glow);
 }
 
-.perforation-line .circle {
-  content: "";
-  position: absolute;
-  right: -9px;
-  width: 16px;
-  height: 16px;
-  background: var(--bg-main) !important;
-  border-radius: 50%;
+.step-item.completed {
+  color: #16a34a;
 }
 
-.perforation-line .top { top: -8px; }
-.perforation-line .bottom { bottom: -8px; }
+.step-item.completed .step-icon {
+  background: #16a34a;
+  color: white;
+}
 
-/* Left Section */
-.ticket-left {
+.step-line {
   flex: 1;
-  padding: 0; /* Handled by internal elements */
+  height: 2px;
+  background: var(--glass-border);
+}
+
+/* Holographic Ticket */
+.holographic-ticket {
+  display: flex;
+  background: white;
+  border-radius: 35px;
+  overflow: hidden;
+  box-shadow: 0 40px 100px rgba(0,0,0,0.15);
   position: relative;
+  min-height: 480px;
+  margin: 30px 0 50px;
+  transition: transform 0.5s ease;
+}
+
+.holographic-ticket:hover {
+  transform: translateY(-10px) rotateX(2deg);
+}
+
+/* Holographic Sheen Effect */
+.holographic-ticket::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    125deg,
+    transparent 0%,
+    transparent 40%,
+    rgba(255, 255, 255, 0.3) 50%,
+    transparent 60%,
+    transparent 100%
+  );
+  background-size: 200% 200%;
+  animation: holoSheen 8s infinite linear;
+  pointer-events: none;
+  z-index: 5;
+}
+
+@keyframes holoSheen {
+  0% { background-position: -200% -200%; }
+  100% { background-position: 200% 200%; }
+}
+
+.ticket-main {
+  flex: 1;
+  padding: 45px;
+  position: relative;
+  border-right: 3px dashed #f1f5f9;
+}
+
+/* Semi-circular cuts on the dashed line */
+.ticket-main::before, .ticket-main::after {
+  content: '';
+  position: absolute;
+  right: -15px;
+  width: 30px;
+  height: 30px;
+  background: var(--bg-color);
+  border-radius: 50%;
+  z-index: 2;
+}
+.ticket-main::before { top: -15px; }
+.ticket-main::after { bottom: -15px; }
+
+.ticket-inner {
   display: flex;
   flex-direction: column;
+  height: 100%;
 }
 
-/* Watermark */
-.ticket-watermark {
-  position: absolute;
-  bottom: 0px;
-  left: -20px;
-  width: 60%;
-  height: 60%;
-  background-image: url('https://upload.wikimedia.org/wikipedia/commons/4/41/Steam_locomotive_silhouette.png'); /* Fallback watermark */
-  background-size: cover;
-  background-repeat: no-repeat;
-  opacity: 0.1;
-  pointer-events: none;
-  filter: grayscale(100%);
-}
-
-.ticket-header-strip {
+.ticket-header {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
-  padding-right: 20px;
+  align-items: flex-start;
+  margin-bottom: 40px;
 }
 
-.blue-banner {
-  background: #0B52C1;
-  color: white;
-  padding: 16px 30px;
-  border-radius: 0 0 40px 0;
+.brand-group {
   display: flex;
   align-items: center;
-  gap: 20px;
-  box-shadow: 4px 4px 15px rgba(11, 82, 193, 0.2);
+  gap: 15px;
 }
 
-.brand-text {
-  font-size: 11px;
-  font-weight: 500;
-  line-height: 1.2;
-  letter-spacing: 1px;
-  text-transform: uppercase;
-  text-align: right;
-  opacity: 0.9;
+.ticket-logo { height: 45px; }
+
+.brand-texts {
+  display: flex;
+  flex-direction: column;
 }
 
-.main-title {
-  font-size: 24px;
-  font-weight: 800;
-  letter-spacing: 0.5px;
-}
-
-.ticket-class {
-  color: #0B52C1;
-  font-size: 20px;
+.brand-texts .b-main {
+  font-size: 22px;
   font-weight: 900;
+  letter-spacing: 3px;
+  color: #0f172a;
+}
+
+.brand-texts .b-sub {
+  font-size: 9px;
+  font-weight: 700;
+  color: #64748b;
   letter-spacing: 1px;
 }
 
-/* Center Details */
-.ticket-body {
-  padding: 10px 40px 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
+.ticket-serial {
+  text-align: right;
 }
 
-.passenger-info {
-  display: flex;
-  flex-direction: column;
-}
-
-.meta-label {
-  font-size: 11px;
-  color: #555;
-  text-transform: uppercase;
+.ticket-serial label {
+  display: block;
+  font-size: 9px;
+  font-weight: 800;
+  color: #94a3b8;
   margin-bottom: 4px;
 }
 
-.passenger-name {
-  font-size: 22px;
-  font-weight: 800;
-  text-transform: uppercase;
+.ticket-serial span {
+  font-family: 'Courier New', Courier, monospace;
+  font-weight: 700;
+  font-size: 18px;
+  color: #334155;
 }
 
 .route-info {
   display: flex;
-  gap: 60px;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 50px;
 }
 
-.route-info .meta-value, .details-row .meta-value {
-  font-size: 16px;
+.from h3, .to h3 {
+  font-size: 2.4rem;
+  font-weight: 900;
+  color: #0f172a;
+  margin: 5px 0;
+}
+
+.route-info label {
+  font-size: 10px;
   font-weight: 800;
-  text-transform: uppercase;
-}
-
-.details-row {
-  display: flex;
-  gap: 30px;
-  align-items: flex-end;
-}
-
-.barcode-block {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  margin-top: 10px;
-}
-
-.barcode-lines {
-  display: flex;
-  align-items: flex-end;
-  height: 30px;
-  gap: 2px;
-  margin-bottom: 4px;
-}
-
-.barcode-lines span {
-  width: 4px;
-  background: #111;
-  height: 100%;
-}
-.barcode-lines span:nth-child(even) { width: 2px; height: 80%; }
-.barcode-lines span:nth-child(3n) { width: 6px; }
-
-.barcode-block small {
-  font-size: 13px;
-  font-weight: 800;
-  letter-spacing: 2px;
-}
-
-/* Right Section */
-.ticket-right {
-  width: 250px;
-  padding: 30px 20px;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-start;
-  position: relative;
-}
-
-.right-list {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.right-row {
-  display: flex;
-  font-size: 12px;
-}
-
-.right-row span {
-  width: 70px;
-  color: #333;
-  font-weight: 600;
-}
-.right-row div {
-  font-weight: 800;
-  color: #111;
-  text-transform: uppercase;
-}
-
-.blue-bottom {
-  position: absolute;
-  bottom: 10px;
-  left: 10px;
-  right: -10px; /* extends slightly out if we want, or flush */
-  background: #0B52C1;
-  color: white;
-  padding: 12px;
-  border-radius: 20px 0 0 20px;
-  text-align: center;
-  font-weight: 800;
-  font-size: 18px;
+  color: #94a3b8;
   letter-spacing: 1px;
 }
 
-.vertical-brand {
-  position: absolute;
-  right: -55px; /* adjust based on width */
-  top: 50%;
-  transform: translateY(-50%) rotate(270deg);
-  white-space: nowrap;
-  font-size: 10px;
+.route-info .time {
   font-weight: 700;
-  color: #888;
-  letter-spacing: 2px;
+  color: var(--accent-gold);
+  font-size: 18px;
 }
 
-/* Status Chip */
-.status-chip {
-  padding: 6px 12px;
-  border-radius: 12px;
-  font-size: 12px;
+.transport-way {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  margin: 0 40px;
+  opacity: 0.3;
+}
+
+.transport-way .line {
+  flex: 1;
+  height: 2px;
+  background: repeating-linear-gradient(to right, #000, #000 5px, transparent 5px, transparent 10px);
+}
+
+.transport-icon {
+  margin: 0 15px;
+  color: #000;
+}
+
+.passenger-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 30px;
+  margin-bottom: 50px;
+}
+
+.p-item label {
+  display: block;
+  font-size: 9px;
   font-weight: 800;
-  border: 1px solid var(--glass-border);
-}
-.status-chip.ok { background: #dcfce7; color: #166534; border-color: #bbf7d0; }
-.status-chip.pending { background: #e0e7ff; color: #3730a3; border-color: #c7d2fe; }
-
-@media (max-width: 900px) {
-  .ticket-layout-modern {
-    grid-template-columns: 1fr;
-  }
+  color: #94a3b8;
+  margin-bottom: 6px;
 }
 
-@media (max-width: 600px) {
-  .train-ticket {
+.p-item span {
+  font-weight: 700;
+  color: #1e293b;
+  font-size: 15px;
+}
+
+.seat-info-ribbon {
+  background: rgba(255, 180, 0, 0.05);
+  border: 1px solid rgba(255, 180, 0, 0.1);
+  padding: 15px 30px;
+  border-radius: 20px;
+  display: flex;
+  justify-content: space-between;
+}
+
+.ribbon-item label {
+  font-size: 8px;
+  font-weight: 800;
+  color: #64748b;
+  margin-bottom: 4px;
+}
+
+.ribbon-item span {
+  font-weight: 800;
+  color: #0f172a;
+}
+
+/* Ticket Stub */
+.ticket-stub {
+  width: 280px;
+  background: #f8fafc;
+  padding: 45px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.qr-wrap {
+  padding: 15px;
+  background: white;
+  border-radius: 25px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+}
+
+.stub-info {
+  text-align: center;
+}
+
+.stub-info .price-tag {
+  font-size: 2rem;
+  font-weight: 900;
+  color: #0f172a;
+  margin-bottom: 10px;
+}
+
+.insurance-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  background: rgba(22, 163, 74, 0.1);
+  color: #16a34a;
+  border-radius: 100px;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.barcode {
+  font-family: 'Libre Barcode 39', cursive;
+  font-size: 32px;
+  color: #94a3b8;
+  letter-spacing: 2px;
+  opacity: 0.5;
+}
+
+/* Success Header */
+.success-icon-wrap {
+  width: 80px;
+  height: 80px;
+  background: #16a34a;
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 20px;
+  box-shadow: 0 15px 30px rgba(22, 163, 74, 0.3);
+  animation: springy 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes springy {
+  0% { transform: scale(0); }
+  70% { transform: scale(1.1); }
+  100% { transform: scale(1); }
+}
+
+.status-badge-premium {
+  padding: 10px 20px;
+  border-radius: 100px;
+  background: #fefce8;
+  color: #854d0e;
+  font-weight: 800;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid #fef08a;
+}
+
+.pulse {
+  width: 8px;
+  height: 8px;
+  background: #ca8a04;
+  border-radius: 50%;
+  animation: pulseAnim 1.5s infinite;
+}
+
+@keyframes pulseAnim {
+  0% { box-shadow: 0 0 0 0 rgba(202, 138, 4, 0.7); }
+  70% { box-shadow: 0 0 0 10px rgba(202, 138, 4, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(202, 138, 4, 0); }
+}
+
+/* Buttons */
+.btn-print {
+  background: #0f172a;
+  color: white;
+  padding: 16px 35px;
+  border-radius: 18px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  transition: all 0.3s ease;
+}
+
+.btn-print:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 15px 30px rgba(15, 23, 42, 0.3);
+}
+
+.btn-outline {
+  background: transparent;
+  padding: 16px 35px;
+  border: 2px solid #e2e8f0;
+  border-radius: 18px;
+  font-weight: 800;
+  color: #475569;
+  transition: all 0.3s ease;
+}
+
+.btn-outline:hover {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+}
+
+@media (max-width: 1024px) {
+  .holographic-ticket {
     flex-direction: column;
   }
-  .perforation-line { display: none; }
-  .ticket-right {
+  .ticket-stub {
     width: 100%;
-    border-top: 2px dashed #000;
-    padding-bottom: 80px;
-  }
-  .blue-bottom {
-    border-radius: 20px;
-    right: 10px;
+    border-top: 3px dashed #e2e8f0;
+    border-left: none;
   }
 }

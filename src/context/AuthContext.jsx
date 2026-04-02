@@ -38,6 +38,7 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null)
   const [profile, setProfile] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [authError, setAuthError] = useState('')
 
   const hydrateUser = async (authUser) => {
     if (!authUser) {
@@ -55,33 +56,12 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     if (!isSupabaseConfigured) {
+      setAuthError('Supabase sozlamalari topilmadi yoki noto‘g‘ri. Iltimos, .env faylini tekshiring.')
       setLoading(false)
       return undefined
     }
 
     let active = true
-    let initialized = false
-
-    const handleSessionUpdate = async (nextSession) => {
-      if (!active) return
-      setSession(nextSession ?? null)
-      try {
-        await hydrateUser(nextSession?.user ?? null)
-      } catch (error) {
-        console.error('Failed to hydrate authenticated user:', error)
-      }
-      if (!initialized) {
-        initialized = true
-        setLoading(false)
-      }
-    }
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (_event, nextSession) => {
-      if (!active) return
-      await handleSessionUpdate(nextSession)
-    })
 
     const init = async () => {
       try {
@@ -92,18 +72,31 @@ export const AuthProvider = ({ children }) => {
         await handleSessionUpdate(data.session)
       } catch (error) {
         console.error('Failed to restore Supabase session:', error)
+        if (active) setAuthError('Supabase sessiyasi tiklanmadi: ' + (error?.message || 'noma’lum xato'))
       } finally {
-        if (!initialized && active) {
-          initialized = true
-          setLoading(false)
-        }
+        if (active) setLoading(false)
       }
     }
 
     init()
 
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (_event, nextSession) => {
+      if (!active) return
+      setSession(nextSession ?? null)
+      try {
+        await hydrateUser(nextSession?.user ?? null)
+      } catch (error) {
+        console.error('Failed to hydrate authenticated user:', error)
+      } finally {
+        if (active) setLoading(false)
+      }
+    })
+
     return () => {
       active = false
+      clearAuthTimeout()
       subscription.unsubscribe()
     }
   }, [])
@@ -165,6 +158,7 @@ export const AuthProvider = ({ children }) => {
         isAuthenticated: Boolean(user),
         login,
         loading,
+        authError,
         profile,
         refreshProfile,
         register,

@@ -3,11 +3,10 @@ import { Outlet, useLocation } from 'react-router-dom'
 import { Header, Footer } from './Navigation'
 
 const Layout = () => {
-  const location = useLocation()
   return (
     <div className="layout">
-      {location.pathname !== '/map' && <Header />}
-      <main className={`main-content ${location.pathname === '/map' ? 'full-map-content' : 'container'}`}>
+      <Header />
+      <main className="main-content container">
         <Outlet />
       </main>
       <Footer />
