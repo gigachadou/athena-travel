@@ -18,7 +18,7 @@ import {
 import { SURKHANDARYA_POSTS } from '../data/posts'
 import { addTicket, formatDatePretty, getTicketById, parsePriceToNumber } from '../utils/tickets'
 import { useAuth } from '../context/AuthContext'
-import { createTicketInDB } from '../services/databaseService'
+import { createTicketInDB, fetchPlaceById, fetchUserTicketById, formatPrice } from '../services/databaseService'
 import '../styles/TicketPage.css'
 
 const TicketPage = () => {
@@ -34,14 +34,23 @@ const TicketPage = () => {
   }, [])
 
   const storedTicket = useMemo(() => getTicketById(ticketId || id), [id, ticketId])
+  const [remoteTicket, setRemoteTicket] = useState(null)
+  const [remotePlace, setRemotePlace] = useState(null)
+
+  const activeTicket = remoteTicket || storedTicket || null
 
   const place = useMemo(() => {
+    if (remotePlace) {
+      return remotePlace
+    }
+
     if (storedTicket) {
       return SURKHANDARYA_POSTS.find(p => String(p.id) === String(storedTicket.placeId)) || location.state?.place || null
     }
-    const fromList = SURKHANDARYA_POSTS.find(p => String(p.id) === String(id)) || SURKHANDARYA_POSTS[0]
+
+    const fromList = SURKHANDARYA_POSTS.find(p => String(p.id) === String(id)) || null
     return location.state?.place || fromList || null
-  }, [id, ticketId, storedTicket, location.state])
+  }, [id, storedTicket, location.state, remotePlace])
 
   const [form, setForm] = useState({
     name: savedUser.name || '',
@@ -53,78 +62,150 @@ const TicketPage = () => {
     notes: ''
   })
 
-  const [status, setStatus] = useState(storedTicket ? 'success' : 'idle') // idle | success | error
+  const [status, setStatus] = useState(activeTicket ? 'success' : 'idle') // idle | success | error
   const [errorMessage, setErrorMessage] = useState('')
-  const [createdTicket, setCreatedTicket] = useState(storedTicket || null)
+  const [createdTicket, setCreatedTicket] = useState(activeTicket || null)
 
-  const ticketIdRef = useRef(storedTicket?.id || `AF-${Math.floor(Math.random() * 900000 + 100000)}`)
+  const ticketIdRef = useRef(activeTicket?.id || `AF-${Math.floor(Math.random() * 900000 + 100000)}`)
 
   const basePrice = parsePriceToNumber(place?.price || 0)
-  const computedTotal = storedTicket?.totalPrice ?? (basePrice * (form.guests || 1))
+  const computedTotal = activeTicket?.totalPrice ?? activeTicket?.total_price ?? (basePrice * (form.guests || 1))
 
   const locale = i18n.language === 'uz' ? 'uz-UZ' : 'en-US'
   const fallbackFrom = 'Tashkent'
   const fallbackTo = 'Surxondaryo'
 
-  const generatedSeat = useMemo(() => storedTicket?.seat || `C ${Math.floor(Math.random() * 36) + 1}`, [storedTicket])
-  const generatedTrain = useMemo(() => storedTicket?.train || `0${Math.floor(Math.random() * 9000 + 1000)}`, [storedTicket])
-  const generatedCoach = useMemo(() => storedTicket?.coach || String(Math.floor(Math.random() * 8) + 1).padStart(2, '0'), [storedTicket])
-  const generatedPlatform = useMemo(() => storedTicket?.platform || String(Math.floor(Math.random() * 3) + 1), [storedTicket])
+  const generatedSeat = useMemo(() => activeTicket?.seat || `C ${Math.floor(Math.random() * 36) + 1}`, [activeTicket])
+  const generatedTrain = useMemo(() => activeTicket?.train || `0${Math.floor(Math.random() * 9000 + 1000)}`, [activeTicket])
+  const generatedCoach = useMemo(() => activeTicket?.coach || String(Math.floor(Math.random() * 8) + 1).padStart(2, '0'), [activeTicket])
+  const generatedPlatform = useMemo(() => activeTicket?.platform || String(Math.floor(Math.random() * 3) + 1), [activeTicket])
 
   const formattedDate = formatDatePretty(form.date || new Date().toISOString().slice(0, 10), locale)
 
+  const placeDisplay = place || (activeTicket ? {
+    id: activeTicket.place_id || activeTicket.placeId || id,
+    title: activeTicket.place_title || activeTicket.title || 'Tanlangan joy',
+    location: activeTicket.place_location || activeTicket.location || '',
+    price: formatPrice(activeTicket.total_price || activeTicket.totalPrice || 0),
+    type: activeTicket.ticket_type || activeTicket.type || 'historical',
+  } : null)
+
   const previewTicket = useMemo(() => {
-    const destination = place?.location?.split(',')?.[0] || place?.title || fallbackTo
-    const origin = place?.origin || fallbackFrom
-    const ticketId = storedTicket?.id || ticketIdRef.current
+    const destination = placeDisplay?.location?.split(',')?.[0] || placeDisplay?.title || fallbackTo
+    const origin = placeDisplay?.origin || fallbackFrom
+    const ticketId = activeTicket?.id || ticketIdRef.current
 
     return {
       id: ticketId,
       passenger: form.name.trim() || 'Komiljonov Diyorbek',
-      from: storedTicket?.from || origin,
-      to: storedTicket?.to || destination,
-      date: storedTicket?.date || form.date,
-      datePretty: formatDatePretty(storedTicket?.date || form.date, locale) || formattedDate,
+      from: activeTicket?.from || origin,
+      to: activeTicket?.to || destination,
+      date: activeTicket?.date || form.date,
+      datePretty: formatDatePretty(activeTicket?.date || form.date, locale) || formattedDate,
       seat: generatedSeat,
       train: generatedTrain,
       coach: generatedCoach,
       platform: generatedPlatform,
-      departTime: storedTicket?.departTime || '8:13 PM',
-      arrivalTime: storedTicket?.arrivalTime || '9:30 PM',
-      className: storedTicket?.ticketClass || 'Economy Class',
+      departTime: activeTicket?.departTime || activeTicket?.depart_time || '8:13 PM',
+      arrivalTime: activeTicket?.arrivalTime || activeTicket?.arrival_time || '9:30 PM',
+      className: activeTicket?.ticketClass || activeTicket?.ticket_class || 'Economy Class',
       total: computedTotal
     }
-  }, [computedTotal, formattedDate, form.date, form.name, generatedCoach, generatedPlatform, generatedSeat, generatedTrain, locale, place, storedTicket])
+  }, [activeTicket, computedTotal, formattedDate, form.date, form.name, generatedCoach, generatedPlatform, generatedSeat, generatedTrain, locale, placeDisplay])
 
   useEffect(() => {
-    if (storedTicket) {
-      setForm(prev => ({
-        ...prev,
-        name: storedTicket.name || prev.name,
-        phone: storedTicket.phone || prev.phone,
-        email: storedTicket.email || prev.email,
-        date: storedTicket.date || prev.date,
-        guests: storedTicket.guests || prev.guests,
-        ticketType: storedTicket.type || prev.ticketType
-      }))
+    let active = true
+
+    const loadRemoteTicket = async () => {
+      if (!ticketId || !user?.id) {
+        if (active) setRemoteTicket(null)
+        return
+      }
+
+      try {
+        const nextTicket = await fetchUserTicketById({ ticketId, userId: user.id })
+        if (active) {
+          setRemoteTicket(nextTicket)
+          if (nextTicket) {
+            setCreatedTicket(nextTicket)
+            setStatus('success')
+          }
+        }
+      } catch (error) {
+        console.error('Failed to load ticket from Supabase:', error)
+      }
     }
-  }, [storedTicket])
+
+    loadRemoteTicket()
+    return () => {
+      active = false
+    }
+  }, [ticketId, user?.id])
 
   useEffect(() => {
-    if (place) {
+    let active = true
+
+    const remotePlaceId = remoteTicket?.place_id || id
+    const localMatch = SURKHANDARYA_POSTS.find((item) => String(item.id) === String(remotePlaceId))
+
+    if (location.state?.place) {
+      setRemotePlace(location.state.place)
+      return undefined
+    }
+
+    if (localMatch) {
+      setRemotePlace(localMatch)
+      return undefined
+    }
+
+    if (!remotePlaceId) {
+      setRemotePlace(null)
+      return undefined
+    }
+
+    fetchPlaceById(remotePlaceId)
+      .then((data) => {
+        if (active) setRemotePlace(data)
+      })
+      .catch((error) => {
+        console.error('Failed to load place for ticket:', error)
+        if (active) setRemotePlace(null)
+      })
+
+    return () => {
+      active = false
+    }
+  }, [id, location.state, remoteTicket?.place_id])
+
+  useEffect(() => {
+    if (activeTicket) {
       setForm(prev => ({
         ...prev,
-        ticketType: place.type === 'hotels' ? 'Premium xona' : prev.ticketType
+        name: activeTicket.name || activeTicket.passenger_name || prev.name,
+        phone: activeTicket.phone || activeTicket.passenger_phone || prev.phone,
+        email: activeTicket.email || activeTicket.passenger_email || prev.email,
+        date: activeTicket.date || prev.date,
+        guests: activeTicket.guests || prev.guests,
+        ticketType: activeTicket.type || activeTicket.ticket_type || prev.ticketType
       }))
     }
-  }, [place])
+  }, [activeTicket])
+
+  useEffect(() => {
+    if (placeDisplay) {
+      setForm(prev => ({
+        ...prev,
+        ticketType: placeDisplay.type === 'hotels' ? 'Premium xona' : prev.ticketType
+      }))
+    }
+  }, [placeDisplay])
 
   const handleChange = (field, value) => {
     setForm(prev => ({ ...prev, [field]: value }))
   }
 
   const validate = () => {
-    if (!place) {
+    if (!placeDisplay) {
       return 'Tanlangan joy topilmadi. Iltimos, ortga qayting.'
     }
     const missing = []
@@ -139,7 +220,7 @@ const TicketPage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    if (storedTicket) return
+    if (activeTicket) return
     const validationError = validate()
     if (validationError) {
       setStatus('error')
@@ -151,12 +232,12 @@ const TicketPage = () => {
     const totalPrice = basePrice * (form.guests || 1)
     const ticketPayload = {
       id: ticketId,
-      placeId: place.id,
-      title: place.title,
-      location: place.location,
-      price: place.price,
-      from: place?.origin || fallbackFrom,
-      to: place?.location?.split(',')?.[0] || place?.title || fallbackTo,
+      placeId: placeDisplay.id,
+      title: placeDisplay.title,
+      location: placeDisplay.location,
+      price: placeDisplay.price,
+      from: placeDisplay?.origin || fallbackFrom,
+      to: placeDisplay?.location?.split(',')?.[0] || placeDisplay?.title || fallbackTo,
       type: form.ticketType,
       guests: form.guests,
       date: form.date,
@@ -180,9 +261,9 @@ const TicketPage = () => {
         await createTicketInDB({
           id: ticketId,
           user_id: user.id,
-          place_id: String(place.id),
-          place_title: place.title,
-          place_location: place.location,
+          place_id: String(placeDisplay.id),
+          place_title: placeDisplay.title,
+          place_location: placeDisplay.location,
           ticket_type: form.ticketType,
           guests: form.guests,
           date: form.date,
@@ -210,7 +291,7 @@ const TicketPage = () => {
     setErrorMessage('')
   }
 
-  if (!place && !storedTicket) {
+  if (!placeDisplay && !activeTicket) {
     return (
       <div className="ticket-page fade-in">
         <div className="empty-state glass-full animate-up">
@@ -236,7 +317,7 @@ const TicketPage = () => {
             </div>
             <div className="top-price glass">
               <span>{t('price')}</span>
-              <strong>{place.price}</strong>
+              <strong>{placeDisplay?.price || formatPrice(computedTotal)}</strong>
             </div>
           </div>
         </div>
@@ -263,7 +344,7 @@ const TicketPage = () => {
                       value={form.name} 
                       onChange={(e) => handleChange('name', e.target.value)} 
                       placeholder="Ism Familiya"
-                      disabled={!!storedTicket}
+                      disabled={!!activeTicket}
                     />
                   </div>
                 </label>
@@ -277,7 +358,7 @@ const TicketPage = () => {
                       value={form.phone} 
                       onChange={(e) => handleChange('phone', e.target.value)} 
                       placeholder="+998 90 123 45 67"
-                      disabled={!!storedTicket}
+                      disabled={!!activeTicket}
                     />
                   </div>
                 </label>
@@ -291,7 +372,7 @@ const TicketPage = () => {
                       value={form.email} 
                       onChange={(e) => handleChange('email', e.target.value)} 
                       placeholder="user@example.com"
-                      disabled={!!storedTicket}
+                      disabled={!!activeTicket}
                     />
                   </div>
                 </label>
@@ -305,7 +386,7 @@ const TicketPage = () => {
                       value={form.date} 
                       onChange={(e) => handleChange('date', e.target.value)} 
                       min={new Date().toISOString().slice(0, 10)}
-                      disabled={!!storedTicket}
+                      disabled={!!activeTicket}
                     />
                   </div>
                 </label>
@@ -320,7 +401,7 @@ const TicketPage = () => {
                       onChange={(e) => handleChange('guests', Number(e.target.value))} 
                       min={1}
                       max={12}
-                      disabled={!!storedTicket}
+                      disabled={!!activeTicket}
                     />
                   </div>
                 </label>
@@ -329,12 +410,12 @@ const TicketPage = () => {
                   <span>Chipta turi</span>
                   <div className="input-shell">
                     <Shield size={16} />
-                    <select value={form.ticketType} onChange={(e) => handleChange('ticketType', e.target.value)} disabled={!!storedTicket}>
+                    <select value={form.ticketType} onChange={(e) => handleChange('ticketType', e.target.value)} disabled={!!activeTicket}>
                       <option value="Standart chipta">Standart chipta</option>
                       <option value="Premium xona">Premium xona</option>
                       <option value="VIP ekskursiya">VIP ekskursiya</option>
                     </select>
-                    {storedTicket && <span className="locked-tag">View only</span>}
+                    {activeTicket && <span className="locked-tag">View only</span>}
                   </div>
                 </label>
               </div>
@@ -348,7 +429,7 @@ const TicketPage = () => {
                     value={form.notes} 
                     onChange={(e) => handleChange('notes', e.target.value)} 
                     placeholder="Yo'lga chiqish vaqti, maxsus ehtiyojlar..."
-                    disabled={!!storedTicket}
+                    disabled={!!activeTicket}
                   />
                 </div>
               </label>
@@ -370,7 +451,7 @@ const TicketPage = () => {
                 </div>
               )}
 
-              {!storedTicket && (
+              {!activeTicket && (
                 <button type="submit" className="btn-accent submit-btn">
                   Tasdiqlash <ChevronRight size={18} />
                 </button>
@@ -382,8 +463,8 @@ const TicketPage = () => {
             <div className="preview-top">
               <div>
                 <p className="eyebrow">Vizual chipta</p>
-                <h3>{place.title}</h3>
-                <p className="muted"><MapPin size={14} /> {place.location}</p>
+                <h3>{placeDisplay?.title || 'Tanlangan joy'}</h3>
+                <p className="muted"><MapPin size={14} /> {placeDisplay?.location || fallbackTo}</p>
               </div>
               <div className={`status-chip ${status === 'success' ? 'ok' : 'pending'}`}>
                 {status === 'success' ? 'Tasdiqlandi' : 'Draft'}
