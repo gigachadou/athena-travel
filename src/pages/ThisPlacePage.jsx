@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useParams, useNavigate } from 'react-router-dom'
-import { Star, Heart, MapPin, ArrowLeft, Send, History, Landmark, Utensils, Hotel, Trees, Info, Plane, Train, Bus, Sparkles, Smile } from 'lucide-react'
+import { Star, Heart, MapPin, ArrowLeft, Send, History, Landmark, Utensils, Hotel, Trees, Info, Plane, Train, Bus, Sparkles, Smile, Trash } from 'lucide-react'
 import Loading from '../components/Loading'
 import BookingTicket from '../components/BookingTicket'
 import { fetchPlacesFromOTM } from '../utils/api'
-import { addComment, addFavorite, fetchCommentsByPlaceId, fetchIsFavorite, fetchPlaceAiText, fetchPlaceById, removeFavorite } from '../services/databaseService'
+import { addComment, addFavorite, deleteComment, fetchCommentsByPlaceId, fetchIsFavorite, fetchPlaceAiText, fetchPlaceById, removeFavorite } from '../services/databaseService'
 import '../styles/ThisPlacePage.css'
 import { useAuth } from '../context/AuthContext'
 
@@ -28,6 +28,7 @@ const ThisPlacePage = () => {
   const [comments, setComments] = useState([])
   const [commentError, setCommentError] = useState('')
   const [favoriteBusy, setFavoriteBusy] = useState(false)
+  const [deletingCommentIds, setDeletingCommentIds] = useState([])
 
   const CATEGORIES = [
     { id: 'historical_places', label: t('landmarks'), icon: <Landmark size={18} /> },
@@ -159,6 +160,23 @@ const ThisPlacePage = () => {
       setCommentError("Sevimli holatini yangilab bo'lmadi.")
     } finally {
       setFavoriteBusy(false)
+    }
+  }
+
+  const handleDeleteComment = async (commentId) => {
+    if (!commentId || !currentUser) return
+
+    try {
+      setCommentError('')
+      setDeletingCommentIds((prev) => [...prev, commentId])
+      await deleteComment(commentId)
+      const refreshedComments = await fetchCommentsByPlaceId(id)
+      setComments(refreshedComments)
+    } catch (error) {
+      console.error('Failed to delete comment:', error)
+      setCommentError("Fikrni o'chirib bo'lmadi.")
+    } finally {
+      setDeletingCommentIds((prev) => prev.filter((item) => item !== commentId))
     }
   }
 
@@ -404,6 +422,17 @@ const ThisPlacePage = () => {
                   </div>
                 </div>
                 <p>{c.text}</p>
+                {currentUser?.id === c.userId && (
+                  <button
+                    className="comment-delete-btn"
+                    type="button"
+                    onClick={() => handleDeleteComment(c.id)}
+                    disabled={deletingCommentIds.includes(c.id)}
+                    aria-label={deletingCommentIds.includes(c.id) ? 'O‘chirilyapti...' : 'O‘chirish'}
+                  >
+                    {deletingCommentIds.includes(c.id) ? '...' : <Trash size={16} />}
+                  </button>
+                )}
               </div>
             ))}
           </div>
@@ -588,6 +617,28 @@ const ThisPlacePage = () => {
 
         .login-to-comment {
             margin-top: 14px;
+        }
+
+        .comment-delete-btn {
+            margin-top: 14px;
+            padding: 10px 14px;
+            border: 1px solid rgba(209, 67, 67, 0.16);
+            background: rgba(209, 67, 67, 0.08);
+            color: #d14343;
+            border-radius: 16px;
+            cursor: pointer;
+            font-weight: 700;
+            transition: transform 0.2s ease, background 0.2s ease;
+        }
+
+        .comment-delete-btn:hover:not(:disabled) {
+            transform: translateY(-1px);
+            background: rgba(209, 67, 67, 0.14);
+        }
+
+        .comment-delete-btn:disabled {
+            opacity: 0.65;
+            cursor: not-allowed;
         }
 
         .comment-item-premium {
