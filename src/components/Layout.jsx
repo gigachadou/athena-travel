@@ -1,12 +1,13 @@
 import React from 'react'
-import { Outlet } from 'react-router-dom'
+import { Outlet, useLocation } from 'react-router-dom'
 import { Header, Footer } from './Navigation'
 
 const Layout = () => {
+  const location = useLocation()
   return (
     <div className="layout">
-      <Header />
-      <main className="main-content container">
+      {location.pathname !== '/map' && <Header />}
+      <main className={`main-content ${location.pathname === '/map' ? 'full-map-content' : 'container'}`}>
         <Outlet />
       </main>
       <Footer />
@@ -21,6 +22,10 @@ const Layout = () => {
           flex: 1;
           padding: 20px;
           animation: fadeIn 0.5s ease-out;
+        }
+        .full-map-content {
+          padding: 0 !important;
+          max-width: none !important;
         }
       `}</style>
     </div>

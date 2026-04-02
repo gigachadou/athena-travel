@@ -121,7 +121,7 @@ const ProfilePage = () => {
           <button className="btn-close" onClick={() => setIsEditing(false)}><X size={24} /></button>
         </div>
         <div className="modal-body">
-          <div className="input-group">
+          <div className="modal-input-group">
             <label>Username</label>
             <input
               type="text"
@@ -129,7 +129,7 @@ const ProfilePage = () => {
               onChange={e => setEditForm({...editForm, username: e.target.value})}
             />
           </div>
-          <div className="input-group">
+          <div className="modal-input-group">
             <label>{t('name')}</label>
             <input 
               type="text" 
@@ -137,7 +137,7 @@ const ProfilePage = () => {
               onChange={e => setEditForm({...editForm, name: e.target.value})}
             />
           </div>
-          <div className="input-group">
+          <div className="modal-input-group">
             <label>Email</label>
             <input type="text" value={editForm.email} disabled />
           </div>
@@ -160,14 +160,14 @@ const ProfilePage = () => {
             <h3>{t('security')}</h3>
         </div>
         <div className="settings-list">
-            <div className="security-item glass">
+            <div className="security-item">
                 <div className="item-text">
                     <h4>Parolni o'zgartirish</h4>
                     <p>Oxirgi marta 3 oy oldin o'zgartirilgan</p>
                 </div>
                 <button className="btn-outline">O'zgartirish</button>
             </div>
-            <div className="security-item glass">
+            <div className="security-item">
                 <div className="item-text">
                     <h4>2-bosqichli tekshiruv</h4>
                     <p>Hisobingizni xavfsizroq qiling</p>
@@ -190,7 +190,7 @@ const ProfilePage = () => {
             <h3>{t('settings')}</h3>
         </div>
         <div className="settings-list">
-          <div className="setting-control glass">
+          <div className="setting-control">
             <div className="control-info">
               <Bell size={20} />
               <span>{t('notifications')}</span>
@@ -206,7 +206,7 @@ const ProfilePage = () => {
             </div>
           </div>
 
-          <div className="setting-control glass">
+          <div className="setting-control">
             <div className="control-info">
               {settings.darkMode ? <Moon size={20} /> : <Sun size={20} />}
               <span>{t('dark_mode')}</span>
@@ -222,7 +222,7 @@ const ProfilePage = () => {
             </div>
           </div>
 
-          <div className="setting-control glass">
+          <div className="setting-control">
             <div className="control-info">
               <Globe size={20} />
               <span>{t('language')}</span>
