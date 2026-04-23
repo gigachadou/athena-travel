@@ -2,12 +2,19 @@
 .map-page {
   position: relative;
   width: 100%;
-  height: 100%;
+  min-height: calc(100vh - 100px);
+  height: calc(100vh - 100px);
   flex: 1;
   z-index: 10;
   background: var(--bg-color);
   overflow: hidden;
   box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+}
+
+.leaflet-container {
+  width: 100%;
+  height: 100%;
+  background: #d7e6f5;
 }
 
 /* ─── Map Wrapper (Background) ────────────────────────────────────────── */
@@ -349,6 +356,11 @@
 
 /* ─── Responsive ───────────────────────────────────────────────────────── */
 @media (max-width: 768px) {
+  .map-page {
+    min-height: calc(100vh - 85px);
+    height: calc(100vh - 85px);
+  }
+
   .map-sidebar {
     width: calc(100% - 32px);
     left: 16px;

@@ -73,10 +73,7 @@ export const AuthProvider = ({ children }) => {
         if (error) throw error
         if (!active) return
 
-        if (data.session) {
-          setSession(data.session)
-          await hydrateUser(data.session.user)
-        }
+        await updateAuthState(data.session)
       } catch (error) {
         console.error('Failed to restore Supabase session:', error)
         if (active) {
@@ -87,7 +84,7 @@ export const AuthProvider = ({ children }) => {
       }
     }
 
-    restoreSession()
+    init()
 
     const {
       data: { subscription },
@@ -105,7 +102,8 @@ export const AuthProvider = ({ children }) => {
 
     return () => {
       active = false
-      if (subscription) subscription.unsubscribe()
+      clearAuthTimeout()
+      subscription.unsubscribe()
     }
   }, [])
 

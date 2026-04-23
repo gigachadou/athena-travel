@@ -85,7 +85,6 @@ const withRetry = async (fn, maxAttempts = 3, delayMs = 1000) => {
       return result
     } catch (error) {
       lastError = error
-      console.warn(`Attempt ${attempt}/${maxAttempts} failed:`, error?.message)
       
       // Check if error is retryable (network errors, timeouts)
       const isRetryable = 
@@ -103,7 +102,6 @@ const withRetry = async (fn, maxAttempts = 3, delayMs = 1000) => {
       
       // Exponential backoff
       const delay = delayMs * Math.pow(2, attempt - 1)
-      console.log(`Retrying in ${delay}ms...`)
       await new Promise(resolve => setTimeout(resolve, delay))
     }
   }
@@ -214,12 +212,10 @@ export const fetchPlaces = async () => {
   try {
     // Network status tekshirish
     if (!navigator.onLine) {
-      console.warn('⚠️ Internet ulanmasi yo\'q!')
       return FALLBACK_PLACES.map((row) => attachSource(normalizePlace(row), 'mock'))
     }
 
     const client = requireSupabase()
-    console.log('📥 Places yuklanmoqda...')
     
     const { data, error } = await withRetry(
       () => withTimeout(
@@ -228,19 +224,17 @@ export const fetchPlaces = async () => {
     )
     
     if (error) throw error
-    console.log('✅ Places yuklandi:', data?.length || 0)
     return (data || []).map((row) => attachSource(normalizePlace(row), 'supabase'))
   } catch (err) {
     if (!hasLoggedFetchPlacesError) {
       const message = err?.message || "Unknown fetchPlaces error"
       const code = err?.code ? ` (code: ${err.code})` : ''
-      console.error(`❌ fetchPlaces error: ${message}${code}`)
+      console.error(`fetchPlaces error: ${message}${code}`)
       if (err && typeof err === 'object') {
         console.debug('fetchPlaces raw error:', err)
       }
       hasLoggedFetchPlacesError = true
     }
-    console.log('📦 Fallback ma\'lumotlar ishlatilmoqda')
     return FALLBACK_PLACES.map((row) => attachSource(normalizePlace(row), 'mock'))
   }
 }

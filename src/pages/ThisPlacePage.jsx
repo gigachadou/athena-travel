@@ -32,10 +32,10 @@ const ThisPlacePage = () => {
 
   const CATEGORIES = [
     { id: 'historical_places', label: t('landmarks'), icon: <Landmark size={18} /> },
-    { id: 'museums', label: t('landmarks'), icon: <Info size={18} /> },
+    { id: 'museums', label: t('museums'), icon: <Info size={18} /> },
     { id: 'hotels', label: t('hotels'), icon: <Hotel size={18} /> },
     { id: 'restaurants', label: t('restaurants'), icon: <Utensils size={18} /> },
-    { id: 'parks', label: t('landmarks'), icon: <Trees size={18} /> },
+    { id: 'parks', label: t('parks'), icon: <Trees size={18} /> },
   ]
 
   useEffect(() => {
@@ -140,7 +140,7 @@ const ThisPlacePage = () => {
 
   const handleFavoriteToggle = async () => {
     if (!currentUser) {
-      setCommentError('Sevimlilarga qo‘shish uchun avval tizimga kiring.')
+      setCommentError("Sevimlilarga qo'shish uchun avval tizimga kiring.")
       return
     }
 
@@ -238,6 +238,7 @@ const ThisPlacePage = () => {
       </div>
 
       <div className="details-content">
+        <div className="details-content-inner">
         <div className="title-row">
           <div className="title-left">
             <div className="category-tag-premium glass-full">
@@ -435,7 +436,7 @@ const ThisPlacePage = () => {
                     type="button"
                     onClick={() => handleDeleteComment(c.id)}
                     disabled={deletingCommentIds.includes(c.id)}
-                    aria-label={deletingCommentIds.includes(c.id) ? 'O‘chirilyapti...' : 'O‘chirish'}
+                    aria-label={deletingCommentIds.includes(c.id) ? "O'chirilyapti..." : "O'chirish"}
                   >
                     {deletingCommentIds.includes(c.id) ? '...' : <Trash size={16} />}
                   </button>
@@ -444,13 +445,21 @@ const ThisPlacePage = () => {
             ))}
           </div>
         </section>
+        </div>
       </div>
 
       <style>{`
         .place-details-page {
+            width: 100%;
+            max-width: none;
+            margin: 0;
+            padding-bottom: 50px;
+        }
+
+        .details-content-inner {
+            width: 100%;
             max-width: 900px;
             margin: 0 auto;
-            padding-bottom: 50px;
         }
 
         .category-tag-premium {
