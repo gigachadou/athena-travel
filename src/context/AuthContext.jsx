@@ -58,6 +58,19 @@ export const AuthProvider = ({ children }) => {
     }
   }
 
+  const clearAuthTimeout = () => {}
+
+  const updateAuthState = async (nextSession) => {
+    setSession(nextSession ?? null)
+    try {
+      await hydrateUser(nextSession?.user ?? null)
+      setAuthError('')
+    } catch (error) {
+      console.error('Failed to update auth state:', error)
+      setAuthError("Autentifikatsiya holatini yangilab bo'lmadi.")
+    }
+  }
+
   useEffect(() => {
     if (!isSupabaseConfigured) {
       setAuthError('Supabase sozlamalari topilmadi yoki noto‘g‘ri. Iltimos, .env faylini tekshiring.')
@@ -84,20 +97,15 @@ export const AuthProvider = ({ children }) => {
       }
     }
 
-    init()
+    restoreSession()
 
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (_event, nextSession) => {
       if (!active) return
-      setSession(nextSession ?? null)
-      try {
-        await hydrateUser(nextSession?.user ?? null)
-      } catch (error) {
-        console.error('Failed to hydrate authenticated user:', error)
-      } finally {
-        if (active) setLoading(false)
-      }
+      setLoading(true)
+      await updateAuthState(nextSession)
+      if (active) setLoading(false)
     })
 
     return () => {

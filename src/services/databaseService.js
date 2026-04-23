@@ -532,3 +532,66 @@ export const createTicketInDB = async (ticketData) => {
   if (error) throw error
   return data
 }
+
+// --- SERVICES (GID & TRANSPORT) ---
+export const fetchTourGuides = async () => {
+  if (!isSupabaseConfigured || !supabase) return []
+  try {
+    const { data, error } = await withTimeout(
+      supabase
+        .from('tour_guides')
+        .select('id,name,phone,languages,region,description,hourly_rate,rating,available,photo_url,created_at')
+        .eq('available', true)
+        .order('rating', { ascending: false })
+    )
+    if (error) throw error
+
+    return (data || []).map((row) => ({
+      id: row.id,
+      name: row.name || 'Gid',
+      phone: row.phone || '',
+      languages: row.languages || [],
+      region: row.region || '',
+      description: row.description || '',
+      hourlyRate: Number(row.hourly_rate ?? 0),
+      rating: Number(row.rating ?? 0),
+      photoUrl: row.photo_url || null,
+      createdAt: row.created_at,
+    }))
+  } catch (err) {
+    console.error('fetchTourGuides error:', err)
+    return []
+  }
+}
+
+export const fetchTransportProviders = async () => {
+  if (!isSupabaseConfigured || !supabase) return []
+  try {
+    const { data, error } = await withTimeout(
+      supabase
+        .from('transport_providers')
+        .select('id,driver_name,phone,vehicle_make,vehicle_model,license_plate,capacity,service_area,fare_per_km,description,available,photo_url,created_at')
+        .eq('available', true)
+        .order('created_at', { ascending: false })
+    )
+    if (error) throw error
+
+    return (data || []).map((row) => ({
+      id: row.id,
+      driverName: row.driver_name || 'Haydovchi',
+      phone: row.phone || '',
+      vehicleMake: row.vehicle_make || '',
+      vehicleModel: row.vehicle_model || '',
+      licensePlate: row.license_plate || '',
+      capacity: Number(row.capacity ?? 4),
+      serviceArea: row.service_area || '',
+      farePerKm: Number(row.fare_per_km ?? 0),
+      description: row.description || '',
+      photoUrl: row.photo_url || null,
+      createdAt: row.created_at,
+    }))
+  } catch (err) {
+    console.error('fetchTransportProviders error:', err)
+    return []
+  }
+}
