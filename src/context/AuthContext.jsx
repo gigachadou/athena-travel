@@ -48,9 +48,14 @@ export const AuthProvider = ({ children }) => {
       return
     }
 
-    const nextProfile = await fetchProfile(authUser.id)
-    setProfile(nextProfile)
-    setUser(buildAuthUser({ user: authUser, profile: nextProfile }))
+    try {
+      const nextProfile = await fetchProfile(authUser.id)
+      setProfile(nextProfile)
+      setUser(buildAuthUser({ user: authUser, profile: nextProfile }))
+    } catch (err) {
+      console.error('Error hydrating user:', err)
+      setProfile(null)
+    }
   }
 
   useEffect(() => {
@@ -62,20 +67,23 @@ export const AuthProvider = ({ children }) => {
 
     let active = true
 
-    const init = async () => {
+    const restoreSession = async () => {
       try {
         const { data, error } = await supabase.auth.getSession()
         if (error) throw error
-        if (!mounted) return
+        if (!active) return
 
-        await updateAuthState(data.session)
+        if (data.session) {
+          setSession(data.session)
+          await hydrateUser(data.session.user)
+        }
       } catch (error) {
         console.error('Failed to restore Supabase session:', error)
-        if (mounted) {
+        if (active) {
           setAuthError('Supabase sessiyasi tiklanmadi: ' + (error?.message || 'noma’lum xato'))
         }
       } finally {
-        if (mounted) setLoading(false)
+        if (active) setLoading(false)
       }
     }
 
@@ -97,8 +105,7 @@ export const AuthProvider = ({ children }) => {
 
     return () => {
       active = false
-      clearAuthTimeout()
-      subscription.unsubscribe()
+      if (subscription) subscription.unsubscribe()
     }
   }, [])
 
@@ -123,10 +130,15 @@ export const AuthProvider = ({ children }) => {
 
   const refreshProfile = async () => {
     if (!user?.id) return null
-    const freshProfile = await fetchProfile(user.id)
-    setProfile(freshProfile)
-    setUser(buildAuthUser({ user: mergeRawUserMetadata(user.rawUser, freshProfile), profile: freshProfile }))
-    return freshProfile
+    try {
+      const freshProfile = await fetchProfile(user.id)
+      setProfile(freshProfile)
+      setUser(buildAuthUser({ user: mergeRawUserMetadata(user.rawUser, freshProfile), profile: freshProfile }))
+      return freshProfile
+    } catch (err) {
+      console.error('Error refreshing profile:', err)
+      throw err
+    }
   }
 
   const saveProfile = async (updates) => {

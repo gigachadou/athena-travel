@@ -2,7 +2,67 @@ import { isSupabaseConfigured, supabase, supabaseConfigError } from '../lib/supa
 
 const FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=1200'
 const numberFormatter = new Intl.NumberFormat('en-US')
-const REQUEST_TIMEOUT_MS = 15000
+const REQUEST_TIMEOUT_MS = 30000
+const FALLBACK_PLACES = [
+  {
+    id: 'mock_1',
+    title: 'Registon maydoni',
+    location: 'Samarqand',
+    description: "Samarqandning eng mashhur tarixiy majmuasi.",
+    image_url: FALLBACK_IMAGE,
+    price: 100000,
+    price_per_person: 100000,
+    type: 'landmark',
+    region: 'Samarqand',
+    amenities: ['Guide', 'Photo spots'],
+    best_season: 'Bahor',
+    difficulty: 'Oson',
+    duration: '2-3 soat',
+    lat: 39.6542,
+    lon: 66.9754,
+    average_rating: 4.8,
+    rating_count: 320,
+  },
+  {
+    id: 'mock_2',
+    title: 'Ichan Qalʼa',
+    location: 'Xiva',
+    description: "UNESCO ro'yxatidagi ochiq osmon ostidagi tarixiy shahar.",
+    image_url: FALLBACK_IMAGE,
+    price: 120000,
+    price_per_person: 120000,
+    type: 'landmark',
+    region: 'Xorazm',
+    amenities: ['Museum', 'Guide'],
+    best_season: 'Kuz',
+    difficulty: 'Oson',
+    duration: '3-4 soat',
+    lat: 41.3789,
+    lon: 60.3582,
+    average_rating: 4.9,
+    rating_count: 280,
+  },
+  {
+    id: 'mock_3',
+    title: 'Osh Markazi (Besh Qozon)',
+    location: 'Toshkent',
+    description: "Milliy taomlar bilan mashhur restoran.",
+    image_url: FALLBACK_IMAGE,
+    price: 80000,
+    price_per_person: 80000,
+    type: 'restaurant',
+    region: 'Toshkent',
+    amenities: ['Parking', 'Family friendly'],
+    best_season: 'Yil davomida',
+    difficulty: 'Oson',
+    duration: '1-2 soat',
+    lat: 41.3486,
+    lon: 69.2866,
+    average_rating: 4.7,
+    rating_count: 410,
+  },
+]
+let hasLoggedFetchPlacesError = false
 
 // --- YORDAMCHI FUNKSIYALAR ---
 const getEmailRedirectTo = () => {
@@ -15,6 +75,39 @@ const requireSupabase = () => {
     throw new Error(supabaseConfigError)
   }
   return supabase
+}
+
+const withRetry = async (fn, maxAttempts = 3, delayMs = 1000) => {
+  let lastError
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      const result = await fn()
+      return result
+    } catch (error) {
+      lastError = error
+      console.warn(`Attempt ${attempt}/${maxAttempts} failed:`, error?.message)
+      
+      // Check if error is retryable (network errors, timeouts)
+      const isRetryable = 
+        error?.message?.includes('Failed to fetch') ||
+        error?.message?.includes('timeout') ||
+        error?.message?.includes('Network') ||
+        error?.message?.includes('CORS') ||
+        error?.message?.includes('ERR_') ||
+        error?.code === 'NETWORK_ERROR' ||
+        error?.code === 'FETCH_ERROR'
+      
+      if (!isRetryable || attempt === maxAttempts) {
+        throw error
+      }
+      
+      // Exponential backoff
+      const delay = delayMs * Math.pow(2, attempt - 1)
+      console.log(`Retrying in ${delay}ms...`)
+      await new Promise(resolve => setTimeout(resolve, delay))
+    }
+  }
+  throw lastError
 }
 
 const withTimeout = async (promise, message = "Supabase so'rovi juda sekin ishladi.") => {
@@ -82,8 +175,16 @@ export const fetchPlacesForAI = async (locale = 'uz') => {
   const fallbackLocales = preferredLocale === 'uz' ? ['uz', 'en'] : ['en', 'uz']
 
   const [{ data: places, error: placesError }, { data: aiTexts, error: aiTextsError }] = await Promise.all([
-    client.from('places').select('*').order('created_at', { ascending: false }),
-    client.from('place_ai_texts').select('*').in('locale', fallbackLocales),
+    withRetry(() => 
+      withTimeout(
+        client.from('places').select('id,title,location,description,image_url,price,price_per_person,type,region,amenities,best_season,difficulty,duration,lat,lon,average_rating,rating_count').order('created_at', { ascending: false })
+      )
+    ),
+    withRetry(() =>
+      withTimeout(
+        client.from('place_ai_texts').select('place_id,locale,summary,must_visit_label,location_info_title,historical_info_title,pricing_note,review_title,review_subtitle,comment_placeholder_auth,comment_placeholder_guest,login_to_comment_label,rating_selected_message,extra').in('locale', fallbackLocales)
+      )
+    ),
   ])
 
   if (placesError) throw placesError
@@ -111,23 +212,46 @@ export const fetchPlacesForAI = async (locale = 'uz') => {
 // ─── PLACES (JOYLAR) ───
 export const fetchPlaces = async () => {
   try {
+    // Network status tekshirish
+    if (!navigator.onLine) {
+      console.warn('⚠️ Internet ulanmasi yo\'q!')
+      return FALLBACK_PLACES.map((row) => attachSource(normalizePlace(row), 'mock'))
+    }
+
     const client = requireSupabase()
-    const { data, error } = await withTimeout(
-      client.from('places').select('*').order('created_at', { ascending: false })
+    console.log('📥 Places yuklanmoqda...')
+    
+    const { data, error } = await withRetry(
+      () => withTimeout(
+        client.from('places').select('id,title,location,description,image_url,price,price_per_person,type,region,amenities,best_season,difficulty,duration,lat,lon,average_rating,rating_count').order('created_at', { ascending: false })
+      )
     )
+    
     if (error) throw error
+    console.log('✅ Places yuklandi:', data?.length || 0)
     return (data || []).map((row) => attachSource(normalizePlace(row), 'supabase'))
   } catch (err) {
-    console.error('fetchPlaces error:', err)
-    return []
+    if (!hasLoggedFetchPlacesError) {
+      const message = err?.message || "Unknown fetchPlaces error"
+      const code = err?.code ? ` (code: ${err.code})` : ''
+      console.error(`❌ fetchPlaces error: ${message}${code}`)
+      if (err && typeof err === 'object') {
+        console.debug('fetchPlaces raw error:', err)
+      }
+      hasLoggedFetchPlacesError = true
+    }
+    console.log('📦 Fallback ma\'lumotlar ishlatilmoqda')
+    return FALLBACK_PLACES.map((row) => attachSource(normalizePlace(row), 'mock'))
   }
 }
 
 export const fetchPlaceById = async (id) => {
   try {
     const client = requireSupabase()
-    const { data, error } = await withTimeout(
-      client.from('places').select('*').eq('id', id).maybeSingle()
+    const { data, error } = await withRetry(
+      () => withTimeout(
+        client.from('places').select('id,title,location,description,image_url,price,price_per_person,type,region,amenities,best_season,difficulty,duration,lat,lon,average_rating,rating_count').eq('id', id).maybeSingle()
+      )
     )
     if (error) throw error
     if (data) return attachSource(normalizePlace(data), 'supabase')
@@ -143,7 +267,9 @@ export const fetchPlaceAiText = async (placeId, locale = 'uz') => {
   try {
     const preferredLocale = locale === 'uz' ? 'uz' : 'en'
     const fallbackLocales = preferredLocale === 'uz' ? ['uz', 'en'] : ['en', 'uz']
-    const { data, error } = await supabase.from('place_ai_texts').select('*').eq('place_id', placeId).in('locale', fallbackLocales)
+    const { data, error } = await withTimeout(
+      supabase.from('place_ai_texts').select('*').eq('place_id', placeId).in('locale', fallbackLocales)
+    )
     if (error) throw error
     if (!data?.length) return null
     const exactMatch = data.find((item) => item.locale === preferredLocale)
@@ -158,7 +284,9 @@ export const fetchCommentsByPlaceId = async (placeId) => {
   if (!isSupabaseConfigured || !supabase) return []
   try {
     // Requires a database RPC or complex join. Using RPC as per existing pattern.
-    const { data, error } = await supabase.rpc('get_comments_with_user_metadata', { p_place_id: placeId })
+    const { data, error } = await withTimeout(
+      supabase.rpc('get_comments_with_user_metadata', { p_place_id: placeId })
+    )
     if (error) throw error
     return (data || []).map((comment) => ({
       id: comment.id,
@@ -225,10 +353,12 @@ export const removeFavorite = async ({ placeId, userId }) => {
 export const fetchUserFavorites = async (userId) => {
   if (!userId || !isSupabaseConfigured || !supabase) return []
   try {
-    const { data, error } = await supabase
-      .from('favorites')
-      .select('*, places(*)')
-      .eq('user_id', userId)
+    const { data, error } = await withTimeout(
+      supabase
+        .from('favorites')
+        .select('*, places(*)')
+        .eq('user_id', userId)
+    )
 
     if (error) throw error
     if (!data) return []
@@ -254,7 +384,9 @@ export const fetchProfileFromDB = async (userId) => {
   if (!userId || !isSupabaseConfigured || !supabase) return null
   const { data, error } = await supabase.from('profiles').select('*').eq('id', userId).maybeSingle()
   if (error) {
-    console.error('DB Profile fetch error:', error)
+    if (error.code !== 'PGRST116') { // Ignore 'JSON object requested, but no rows returned'
+      console.warn('DB Profile fetch note:', error.message || error);
+    }
     return null
   }
   return data
@@ -264,8 +396,8 @@ export const fetchProfile = async (userId) => {
   if (!userId || !isSupabaseConfigured || !supabase) return null
   try {
     const client = requireSupabase()
-    const dbProfile = await fetchProfileFromDB(userId)
-    const { data: { user }, error: authError } = await client.auth.getUser()
+    const dbProfile = await withRetry(() => fetchProfileFromDB(userId))
+    const { data: { user }, error: authError } = await withRetry(() => client.auth.getUser())
 
     if (authError || !user) return dbProfile
 
