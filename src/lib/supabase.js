@@ -20,12 +20,43 @@ export const supabaseConfigError = isSupabaseConfigured
   : "Supabase sozlamalari topilmadi yoki noto'g'ri. `.env` ichidagi `VITE_SUPABASE_URL` va `VITE_SUPABASE_ANON_KEY` ni tekshiring."
 export const supabaseProjectUrl = supabaseUrl || ''
 
-export const supabase = isSupabaseConfigured
-  ? createClient(supabaseUrl, supabaseAnonKey, {
-      auth: {
-        persistSession: true,
-        autoRefreshToken: true,
-        storage: typeof window !== 'undefined' ? window.localStorage : undefined,
+// Singleton pattern - faqat bir marta yaratiladi
+let supabaseInstance = null
+
+const createSupabaseClient = () => {
+  if (supabaseInstance) {
+    return supabaseInstance
+  }
+
+  console.log('🔧 Supabase client yaratilmoqda:', supabaseUrl)
+  
+  supabaseInstance = createClient(supabaseUrl, supabaseAnonKey, {
+    auth: {
+      persistSession: false,
+      autoRefreshToken: true,
+      detectSessionInUrl: true,
+    },
+    global: {
+      headers: {
+        'x-client-info': 'athena-travel@1.0.0',
+        'Content-Type': 'application/json',
       },
-    })
-  : null
+    },
+    db: {
+      schema: 'public',
+    },
+    // Fetch options for better reliability
+    fetch: (url, options = {}) => {
+      console.log('📡 Supabase request:', url)
+      return fetch(url, {
+        ...options,
+        mode: 'cors',
+        credentials: 'omit',
+      })
+    },
+  })
+
+  return supabaseInstance
+}
+
+export const supabase = isSupabaseConfigured ? createSupabaseClient() : null

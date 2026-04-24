@@ -176,6 +176,17 @@ function guessType(tags = {}) {
 let globalCache = null
 let globalCacheTs = 0
 const CACHE_TTL = 15 * 60 * 1000
+const WARN_COOLDOWN_MS = 60 * 1000
+let lastWarnMessage = ''
+let lastWarnAt = 0
+
+function warnWithCooldown(message) {
+  const now = Date.now()
+  if (message === lastWarnMessage && now - lastWarnAt < WARN_COOLDOWN_MS) return
+  lastWarnMessage = message
+  lastWarnAt = now
+  console.warn(message)
+}
 
 /**
  * Fetch real places for all of Uzbekistan from Overpass API
@@ -196,12 +207,12 @@ export async function fetchPlaces(types) {
     const res = await fetch(OVERPASS_URL, { 
       method: 'POST', 
       body,
-      // Abort after 4.5 seconds to prevent extremely long hangs
-      signal: AbortSignal.timeout(4500)
+      // Abort after 15 seconds for heavy Uzbekistan-wide queries
+      signal: AbortSignal.timeout(15000)
     })
     
     if (!res.ok) {
-      console.warn(`Overpass HTTP ${res.status} error. Using fallback data.`);
+      warnWithCooldown(`Overpass HTTP ${res.status} error. Using fallback data.`)
       return filterFallback(types);
     }
 
@@ -233,7 +244,7 @@ export async function fetchPlaces(types) {
 
     return results.filter(l => types.includes(l.type))
   } catch (error) {
-    console.warn(`Overpass fetch failed (${error.name}). Using fallback data.`);
+    warnWithCooldown(`Overpass fetch failed (${error.name}). Using fallback data.`)
     return filterFallback(types);
   }
 }
