@@ -1,13 +1,12 @@
-import { GoogleGenAI } from '@google/genai';
 import { fetchPlacesForAI, formatPrice } from './databaseService';
 import { isSupabaseConfigured } from '../lib/supabase';
 
-const API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
-const MODEL_NAME = 'gemini-2.5-flash';
+const API_KEY = import.meta.env.VITE_GROQ_API_KEY;
+const MODEL_NAME = import.meta.env.VITE_GROQ_MODEL || 'llama-3.3-70b-versatile';
+const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions'
 
 const FALLBACK_DESTINATION_CONTEXT = [];
 
-let aiClient;
 const CONTEXT_CACHE_TTL = 60_000;
 let aiContextCache = {
   locale: null,
@@ -15,42 +14,31 @@ let aiContextCache = {
   value: null,
 };
 
-const getClient = () => {
-  if (!API_KEY) {
-    return null;
-  }
-
-  if (!aiClient) {
-    aiClient = new GoogleGenAI({ apiKey: API_KEY });
-  }
-
-  return aiClient;
-};
-
 const normalizeHistory = (history) =>
   history
     .filter((message) => message?.text?.trim())
     .slice(-8)
     .map((message) => ({
-      role: message.role === 'user' ? 'user' : 'model',
-      parts: [{ text: message.text.trim() }],
+      role: message.role === 'user' ? 'user' : 'assistant',
+      content: message.text.trim(),
     }));
 
 const getFriendlyErrorMessage = (error) => {
   const message = error instanceof Error ? error.message : String(error);
 
   if (/api key/i.test(message) || /permission denied/i.test(message)) {
-    return "Gemini API kaliti noto'g'ri yoki ruxsat berilmagan. `.env` ichidagi `VITE_GEMINI_API_KEY` ni tekshiring.";
+    return "Groq API kaliti noto'g'ri yoki ruxsat berilmagan. `.env` ichidagi `VITE_GROQ_API_KEY` ni tekshiring.";
   }
 
   if (/quota|rate|429/i.test(message)) {
-    return "Gemini limiti vaqtincha tugagan ko'rinadi. Birozdan keyin qayta urinib ko'ring.";
+    return "Groq limiti vaqtincha tugagan ko'rinadi. Birozdan keyin qayta urinib ko'ring.";
   }
 
   return "AI xizmatiga ulanishda muammo yuz berdi. Internet va API sozlamalarini tekshirib, qayta urinib ko'ring.";
 };
 
-export const hasGeminiApiKey = Boolean(API_KEY);
+export const hasGroqApiKey = Boolean(API_KEY);
+export const hasGeminiApiKey = Boolean(import.meta.env.VITE_GEMINI_API_KEY);
 
 const mapPlaceForPrompt = (place) => ({
   title: place.title,
@@ -204,38 +192,46 @@ export const getAIResponse = async (userMessage, history = [], options = {}) => 
     return "Savol matni bo'sh bo'lmasligi kerak.";
   }
 
-  const client = getClient();
-
-  if (!client) {
-    return "`.env` faylida `VITE_GEMINI_API_KEY` topilmadi. Kalitni qo'shib, Vite serverini qayta ishga tushiring.";
+  if (!API_KEY) {
+    return "`.env` faylida `VITE_GROQ_API_KEY` topilmadi. Kalitni qo'shib, Vite serverini qayta ishga tushiring.";
   }
 
   try {
     const destinationContext = await getDestinationContext(locale)
+    const systemPrompt = buildSystemPrompt(destinationContext, responseLanguage)
 
-    const response = await client.models.generateContent({
-      model: MODEL_NAME,
-      contents: [
-        ...normalizeHistory(history),
-        {
-          role: 'user',
-          parts: [{ text: trimmedMessage }],
-        },
-      ],
-      config: {
-        systemInstruction: buildSystemPrompt(destinationContext, responseLanguage),
+    const response = await fetch(GROQ_API_URL, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${API_KEY}`,
+        'Content-Type': 'application/json',
       },
-    });
+      body: JSON.stringify({
+        model: MODEL_NAME,
+        messages: [
+          { role: 'system', content: systemPrompt },
+          ...normalizeHistory(history),
+          { role: 'user', content: trimmedMessage },
+        ],
+        temperature: 0.7,
+      }),
+    })
 
-    const text = response.text?.trim();
+    if (!response.ok) {
+      const errorText = await response.text().catch(() => '')
+      throw new Error(errorText || `Groq API error: ${response.status}`)
+    }
+
+    const data = await response.json()
+    const text = data?.choices?.[0]?.message?.content?.trim()
 
     if (!text) {
-      return "Gemini hozircha aniq javob qaytarmadi. Savolni biroz boshqacharoq yozib qayta yuboring.";
+      return "AI hozircha aniq javob qaytarmadi. Savolni biroz boshqacharoq yozib qayta yuboring.";
     }
 
     return text;
   } catch (error) {
-    console.error('Gemini AI Service Error:', error);
+    console.error('Groq AI Service Error:', error);
     return getFriendlyErrorMessage(error);
   }
 };

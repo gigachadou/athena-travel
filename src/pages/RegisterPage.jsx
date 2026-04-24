@@ -3,7 +3,7 @@ import { useNavigate, Link } from 'react-router-dom'
 import { User, Mail, Lock, ChevronRight, Sparkles, ChevronLeft } from 'lucide-react'
 
 import '../styles/AuthPage.css'
-import { useAuth } from '../context/AuthContext'
+import { startSignupOtp } from '../services/emailVerificationService'
 
 const RegisterPage = () => {
   const [formData, setFormData] = useState({
@@ -16,7 +16,6 @@ const RegisterPage = () => {
   const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const navigate = useNavigate()
-  const { register } = useAuth()
 
   const handleRegister = async (e) => {
     e.preventDefault()
@@ -29,18 +28,21 @@ const RegisterPage = () => {
     try {
       setSubmitting(true)
       setError('')
-      const result = await register({
+      const email = formData.email.trim()
+      await startSignupOtp({
         username: formData.username.trim(),
         fullName: formData.fullName.trim(),
-        email: formData.email.trim(),
+        email,
         password: formData.password,
       })
 
-      if (result.session) {
-        navigate('/', { replace: true })
-      } else {
-        navigate('/otp', { replace: true, state: { email: formData.email.trim() } })
-      }
+      navigate('/otp', {
+        replace: true,
+        state: {
+          email,
+          mode: 'signup',
+        },
+      })
     } catch (err) {
       console.error('Failed to register:', err)
       setError(err.message || "Ro'yxatdan o'tib bo'lmadi.")

@@ -124,14 +124,24 @@ export const AuthProvider = ({ children }) => {
   }
 
   const register = async ({ email, password, username, fullName }) => {
-    const { user: registeredUser, session: nextSession } = await signUpWithPassword({ email, password, username, fullName })
+    try {
+      const { user: registeredUser, session: nextSession } = await signUpWithPassword({ email, password, username, fullName })
 
-    if (nextSession?.user) {
-      setSession(nextSession)
-      await hydrateUser(nextSession.user)
+      if (nextSession?.user) {
+        setSession(nextSession)
+        await hydrateUser(nextSession.user)
+      }
+
+      return { user: registeredUser, session: nextSession }
+    } catch (error) {
+      if (error.message.includes('Signups not allowed for this instance') || error.message.includes('Email signups are disabled')) {
+        throw new Error('Ro\'yxatdan o\'tish hozircha mavjud emas. Iltimos, qo\'llab-quvvatlash xizmatiga murojaat qiling.');
+      }
+      if (error.message.includes('User already registered')) {
+        throw new Error('Bu email allaqachon ro\'yxatdan o\'tgan. Iltimos, login sahifasiga o\'ting.');
+      }
+      throw error;
     }
-
-    return { user: registeredUser, session: nextSession }
   }
 
   const refreshProfile = async () => {

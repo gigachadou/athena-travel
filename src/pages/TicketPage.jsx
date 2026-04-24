@@ -134,6 +134,9 @@ const TicketPage = () => {
       const totalPrice = basePrice * (form.guests || 1)
       const uniqueId = `AF-${Math.floor(100000 + Math.random() * 900000)}`
 
+      // Dummy card data for simulation
+      const cardData = { number: '4111111111111111' }
+
       const ticketPayload = {
         user_id: user.id,
         ticket_id: uniqueId,
