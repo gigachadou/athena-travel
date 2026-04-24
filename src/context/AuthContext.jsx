@@ -87,7 +87,7 @@ export const AuthProvider = ({ children }) => {
       }
     }
 
-    init()
+    // init()
 
     const {
       data: { subscription },

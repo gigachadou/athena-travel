@@ -3,7 +3,7 @@ import { AlertCircle, Bot, Loader2, Mic, Send, Sparkles, User, Volume2 } from 'l
 import { useTranslation } from 'react-i18next';
 import { useLocation } from 'react-router-dom';
 import '../styles/AIPage.css';
-import { getAIResponse, hasGeminiApiKey } from '../services/aiService';
+import { getAIResponse, hasGroqApiKey } from '../services/aiService';
 
 const WELCOME_MESSAGE = {
   id: 1,
@@ -112,7 +112,7 @@ const AIPage = () => {
     };
 
     const history = messages.map((message) => ({
-      role: message.sender === 'user' ? 'user' : 'model',
+      role: message.sender === 'user' ? 'user' : 'assistant',
       text: message.text,
     }));
 
@@ -174,10 +174,10 @@ const AIPage = () => {
   return (
     <div className="ai-page fade-in">
 
-      {!hasGeminiApiKey && (
+      {!hasGroqApiKey && (
         <div className="ai-status-card warning animate-up">
           <AlertCircle size={18} />
-          <span>`.env` ichidagi `VITE_GEMINI_API_KEY` topilmadi. Kalitni qo'shib, `npm run dev` ni qayta ishga tushiring.</span>
+          <span>`.env` ichidagi `VITE_GROQ_API_KEY` topilmadi. Kalitni qo'shib, `npm run dev` ni qayta ishga tushiring.</span>
         </div>
       )}
 
