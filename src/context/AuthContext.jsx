@@ -87,7 +87,7 @@ export const AuthProvider = ({ children }) => {
       }
     }
 
-    restoreSession()
+    init()
 
     const {
       data: { subscription },
