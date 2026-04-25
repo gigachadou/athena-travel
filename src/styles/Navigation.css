@@ -210,6 +210,41 @@
   .nav-label { display: none; }
   .nav-item.special .nav-label { display: block; }
   .header { height: 70px; }
+  .header-content { gap: 12px; }
+  .logo { gap: 10px; min-width: 0; }
+  .logo-img { width: 44px; height: 44px; }
+  .premium { font-size: 18px; }
+  .platform { font-size: 11px; }
+  .header-actions { gap: 8px; }
+  .btn-ai-header { padding: 10px 14px; border-radius: 14px; }
   .footer { bottom: 15px; width: 95%; height: 70px; }
   .nav-item.special .icon-wrapper { width: 58px; height: 58px; }
+}
+
+@media (max-width: 480px) {
+  .logo-text {
+    display: none;
+  }
+
+  .action-btn {
+    width: 42px;
+    height: 42px;
+    border-radius: 14px;
+  }
+
+  .btn-ai-header {
+    padding: 10px 12px;
+    font-size: 13px;
+  }
+
+  .footer {
+    bottom: 10px;
+    width: calc(100% - 20px);
+    height: 68px;
+    border-radius: 22px;
+  }
+
+  .icon-wrapper {
+    padding: 8px;
+  }
 }

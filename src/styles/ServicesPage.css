@@ -133,6 +133,27 @@
 }
 
 @media (max-width: 640px) {
+  .services-page {
+    padding: 40px 16px 110px;
+  }
+  .services-header {
+    gap: 12px;
+    margin-bottom: 22px;
+  }
+  .services-title h2 {
+    font-size: 22px;
+  }
+  .service-card {
+    padding: 18px;
+    border-radius: 22px;
+  }
+  .service-top,
+  .service-info {
+    align-items: flex-start;
+  }
+  .service-info {
+    flex-direction: column;
+  }
   .services-empty {
     padding: 40px 20px;
   }
@@ -140,4 +161,3 @@
     flex-direction: column;
   }
 }
-

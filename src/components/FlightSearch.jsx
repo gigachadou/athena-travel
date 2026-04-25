@@ -281,7 +281,9 @@ const FlightSearch = () => {
           </div>
           <div className="checkbox-group">
             <label className="check-label">
-              <input type="checkbox" /> O'tkazmalarsiz
+              <input type="checkbox" />
+              <span className="custom-check"></span>
+              O'tkazmalarsiz
             </label>
           </div>
         </div>
