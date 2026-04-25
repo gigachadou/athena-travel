@@ -18,13 +18,13 @@ export const fetchWikipediaSummary = async (title, lang = 'uz') => {
     const formattedTitle = title.replace(/ /g, '_');
     // Primary language fetch
     let response = await fetch(`https://${lang}.wikipedia.org/api/rest_v1/page/summary/${formattedTitle}`, {
-      headers: { 'User-Agent': 'AfinaTravel/1.0' }
+      headers: { 'User-Agent': 'YolchiAI/1.0' }
     });
 
     // Fallback to English if primary language fails or is too short
     if (!response.ok && lang !== 'en') {
       response = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${formattedTitle}`, {
-        headers: { 'User-Agent': 'AfinaTravel/1.0' }
+        headers: { 'User-Agent': 'YolchiAI/1.0' }
       });
     }
 

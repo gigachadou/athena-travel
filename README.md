@@ -1,6 +1,6 @@
-Athena Travel
+Yo'lchiAI
 
-Demo version of Athena Travel website
+Demo version of Yo'lchiAI website
 
 ## Database
 # There are several .sql files showing how database should be structured 

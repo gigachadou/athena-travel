@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react'
 import { useNavigate, useLocation, Link } from 'react-router-dom'
-import { ChevronLeft, MailCheck, Lock, ChevronRight } from 'lucide-react'
+import { ChevronLeft, Lock, ChevronRight } from 'lucide-react'
+import logo from '../assets/logo.png'
 
 import '../styles/AuthPage.css'
 import { fetchProfile, resendSignupConfirmation } from '../services/databaseService'
@@ -120,7 +121,7 @@ const OTPPage = () => {
       </button>
       <div className="auth-card">
         <div className="auth-logo">
-          <MailCheck size={40} color="var(--primary-blue)" />
+          <img src={logo} alt="Yo'lchiAI Logo" />
         </div>
 
         <h1 className="auth-title">Emailni tasdiqlang</h1>

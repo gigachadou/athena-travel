@@ -20,7 +20,7 @@ import { PrivateRoute, PublicOnlyRoute } from './components/AuthRoute'
 function App() {
   // Initialize theme and language on mount
   useState(() => {
-    const savedSettings = localStorage.getItem('afina_settings')
+    const savedSettings = localStorage.getItem('yolchiai_settings')
     if (savedSettings) {
       const { darkMode, language } = JSON.parse(savedSettings)
       document.documentElement.setAttribute('data-theme', darkMode ? 'dark' : 'light')

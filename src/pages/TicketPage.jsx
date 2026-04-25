@@ -23,6 +23,7 @@ import { QRCodeSVG } from 'qrcode.react'
 import { formatDatePretty, parsePriceToNumber } from '../utils/tickets'
 import { useAuth } from '../context/AuthContext'
 import { createTicketInDB, fetchPlaceById, fetchUserTicketById, formatPrice } from '../services/databaseService'
+import logo from "../assets/logo.png"
 import '../styles/TicketPage.css'
 
 const TicketPage = () => {
@@ -224,9 +225,9 @@ const TicketPage = () => {
                 <div className="ticket-inner">
                     <div className="ticket-header">
                        <div className="brand-group">
-                          <img src="/logo.png" alt="Logo" className="ticket-logo" onError={(e) => e.target.style.display='none'} />
+                          <img src={logo} alt="Yo'lchiAI Logo" className="ticket-logo" onError={(e) => e.target.style.display='none'} />
                           <div className="brand-texts">
-                             <span className="b-main">AFINA</span>
+                             <span className="b-main">YO'LCHIAI</span>
                              <span className="b-sub">TRAVEL AGENCY</span>
                           </div>
                        </div>
@@ -300,12 +301,12 @@ const TicketPage = () => {
                 <div className="stub-inner">
                    <div className="qr-wrap">
                       <QRCodeSVG 
-                        value={`AFINA-${activeTicket.ticket_id}-${activeTicket.passport_number}`} 
+                        value={`YOLCHIAI-${activeTicket.ticket_id}-${activeTicket.passport_number}`} 
                         size={110} 
                         level="H"
                         includeMargin={false}
                         imageSettings={{
-                           src: "/logo.png",
+                           src: logo,
                            excavate: true,
                            width: 24,
                            height: 24
