@@ -224,6 +224,7 @@ export const fetchPlaces = async () => {
     )
     
     if (error) throw error
+    console.log('✅ Places yuklandi:', data?.length || 0)
     return (data || []).map((row) => attachSource(normalizePlace(row), 'supabase'))
   } catch (err) {
     if (!hasLoggedFetchPlacesError) {

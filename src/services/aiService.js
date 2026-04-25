@@ -1,3 +1,4 @@
+import OpenAI from 'openai';
 import { fetchPlacesForAI, formatPrice } from './databaseService';
 import { isSupabaseConfigured } from '../lib/supabase';
 
@@ -14,6 +15,22 @@ let aiContextCache = {
   value: null,
 };
 
+const getClient = () => {
+  if (!API_KEY) {
+    return null;
+  }
+
+  if (!aiClient) {
+    aiClient = new OpenAI({
+      apiKey: API_KEY,
+      baseURL: BASE_URL,
+      dangerouslyAllowBrowser: true,
+    });
+  }
+
+  return aiClient;
+};
+
 const normalizeHistory = (history) =>
   history
     .filter((message) => message?.text?.trim())
@@ -25,12 +42,13 @@ const normalizeHistory = (history) =>
 
 const getFriendlyErrorMessage = (error) => {
   const message = error instanceof Error ? error.message : String(error);
+  const status = error?.status;
 
-  if (/api key/i.test(message) || /permission denied/i.test(message)) {
+  if (status === 401 || /api key|unauthorized|authentication|permission denied/i.test(message)) {
     return "Groq API kaliti noto'g'ri yoki ruxsat berilmagan. `.env` ichidagi `VITE_GROQ_API_KEY` ni tekshiring.";
   }
 
-  if (/quota|rate|429/i.test(message)) {
+  if (status === 429 || /quota|rate|429/i.test(message)) {
     return "Groq limiti vaqtincha tugagan ko'rinadi. Birozdan keyin qayta urinib ko'ring.";
   }
 
@@ -38,7 +56,6 @@ const getFriendlyErrorMessage = (error) => {
 };
 
 export const hasGroqApiKey = Boolean(API_KEY);
-export const hasGeminiApiKey = Boolean(import.meta.env.VITE_GEMINI_API_KEY);
 
 const mapPlaceForPrompt = (place) => ({
   title: place.title,
@@ -192,7 +209,9 @@ export const getAIResponse = async (userMessage, history = [], options = {}) => 
     return "Savol matni bo'sh bo'lmasligi kerak.";
   }
 
-  if (!API_KEY) {
+  const client = getClient();
+
+  if (!client) {
     return "`.env` faylida `VITE_GROQ_API_KEY` topilmadi. Kalitni qo'shib, Vite serverini qayta ishga tushiring.";
   }
 
@@ -200,33 +219,25 @@ export const getAIResponse = async (userMessage, history = [], options = {}) => 
     const destinationContext = await getDestinationContext(locale)
     const systemPrompt = buildSystemPrompt(destinationContext, responseLanguage)
 
-    const response = await fetch(GROQ_API_URL, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: MODEL_NAME,
-        messages: [
-          { role: 'system', content: systemPrompt },
-          ...normalizeHistory(history),
-          { role: 'user', content: trimmedMessage },
-        ],
-        temperature: 0.7,
-      }),
-    })
+    const response = await client.chat.completions.create({
+      model: MODEL_NAME,
+      messages: [
+        {
+          role: 'system',
+          content: buildSystemPrompt(destinationContext, responseLanguage),
+        },
+        ...normalizeHistory(history),
+        {
+          role: 'user',
+          content: trimmedMessage,
+        },
+      ],
+    });
 
-    if (!response.ok) {
-      const errorText = await response.text().catch(() => '')
-      throw new Error(errorText || `Groq API error: ${response.status}`)
-    }
-
-    const data = await response.json()
-    const text = data?.choices?.[0]?.message?.content?.trim()
+    const text = response.choices?.[0]?.message?.content?.trim();
 
     if (!text) {
-      return "AI hozircha aniq javob qaytarmadi. Savolni biroz boshqacharoq yozib qayta yuboring.";
+      return "Groq hozircha aniq javob qaytarmadi. Savolni biroz boshqacharoq yozib qayta yuboring.";
     }
 
     return text;
