@@ -331,8 +331,44 @@ textarea {
     height: 45vh;
   }
 
+  .details-header.premium-header {
+    top: 14px;
+    left: 12px;
+    right: 12px;
+    gap: 10px;
+    align-items: flex-start;
+  }
+
+  .header-right {
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+
+  .book-btn-premium {
+    padding: 10px 14px;
+    border-radius: 14px;
+  }
+
+  .details-content {
+    padding: 24px 16px 90px;
+    border-radius: 28px 28px 0 0;
+  }
+
   .title-row {
     flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .rating-badge,
+  .location-row {
+    width: 100%;
+  }
+
+  .nearby-item,
+  .comment-user {
+    flex-direction: column;
+    gap: 8px;
     align-items: flex-start;
   }
 }

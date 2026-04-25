@@ -28,6 +28,11 @@ const Layout = () => {
           display: flex;
           flex-direction: column;
         }
+        @media (max-width: 640px) {
+          .main-content {
+            padding: 16px;
+          }
+        }
       `}</style>
     </div>
   )

@@ -272,8 +272,15 @@ const SearchPage = () => {
         
         @media (max-width: 640px) {
             .search-bar-container { top: 75px; gap: 10px; padding: 10px 0; }
-            .btn-filter { width: 50px; height: 50px; }
+            .search-input-wrapper { padding: 8px 16px; border-radius: 16px; }
+            .search-input-wrapper input { padding: 10px 12px; font-size: 1rem; }
+            .btn-filter { width: 50px; height: 50px; border-radius: 16px; }
             .filter-drawer { width: 100%; }
+            .empty-state-search { padding: 36px 20px; }
+        }
+        @media (max-width: 480px) {
+            .search-bar-container { flex-direction: column; position: static; }
+            .btn-filter { width: 100%; height: 48px; }
         }
       `}</style>
     </div>
