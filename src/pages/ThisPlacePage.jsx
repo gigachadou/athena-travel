@@ -30,8 +30,8 @@ import Loading from '../components/Loading'
 import BookingTicket from '../components/BookingTicket'
 import { fetchPlacesFromOTM } from '../utils/api'
 import { addComment, addFavorite, deleteComment, fetchCommentsByPlaceId, fetchIsFavorite, fetchPlaceAiText, fetchPlaceById, removeFavorite } from '../services/databaseService'
-import '../styles/ThisPlacePage.css'
 import { useAuth } from '../context/AuthContext'
+import "../styles/ThisPlacePage.css"
 
 const ThisPlacePage = () => {
   const { id } = useParams()
@@ -93,11 +93,7 @@ const ThisPlacePage = () => {
 
           // Set gallery images with fallback
           setGalleryImages([
-            place.image,
-            'https://images.unsplash.com/photo-1590073242678-70ee3fc28e8e?w=800&h=600&fit=crop',
-            'https://images.unsplash.com/photo-1540959196431-2fd74d538645?w=800&h=600&fit=crop',
-            'https://images.unsplash.com/photo-1516483638261-f4dbaf036963?w=800&h=600&fit=crop',
-          ])
+            place.image])
 
           // Check favorite status for authenticated users
           if (currentUser) {
@@ -303,36 +299,21 @@ const ThisPlacePage = () => {
         </div>
       </header>
 
-      {/* Image Gallery */}
-      <section className="image-gallery">
-        <div className="gallery-container">
-          {galleryImages.map((img, idx) => (
-            <div
-              key={idx}
-              className={`gallery-item ${idx === activeImageIndex ? 'active' : ''}`}
-              onClick={() => setActiveImageIndex(idx)}
-            >
-              <img src={img} alt={`Gallery ${idx + 1}`} loading="lazy" />
-              {idx === 0 && (
-                <div className="gallery-badge">
-                  <Camera size={16} />
-                  <span>{galleryImages.length}</span>
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
+    <div className="image-gallery">
+  <div className="gallery-container">
+    <div className="gallery-item">
+      <img src={galleryImages[0]} alt="Main" />
+    </div>
+  </div>
 
-        <div className="gallery-indicators">
-          {galleryImages.map((_, idx) => (
-            <button
-              key={idx}
-              className={`indicator ${idx === activeImageIndex ? 'active' : ''}`}
-              onClick={() => setActiveImageIndex(idx)}
-            />
-          ))}
-        </div>
-      </section>
+  <div className="title-section">
+    <h1 className="place-title">{placeData.title}</h1>
+    <div className="location-info">
+      <MapPin size={18} />
+      <span>{placeData.meta?.location}</span>
+    </div>
+  </div>
+</div>
 
       {/* Main Content */}
       <main className="place-content">
