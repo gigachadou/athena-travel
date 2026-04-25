@@ -584,6 +584,12 @@
 }
 
 @media (max-width: 480px) {
+  .profile-page-premium { padding: 16px 16px 110px; }
+  .profile-hero { padding: 22px 18px; border-radius: 24px; }
+  .profile-top { flex-wrap: wrap; gap: 16px; }
+  .profile-meta { min-width: 0; }
+  .profile-meta h2 { font-size: 18px; }
+  .profile-stats { gap: 10px; }
   .menu-grid { grid-template-columns: 1fr; }
   .profile-stats { padding: 12px; }
   .stat-item strong { font-size: 15px; }

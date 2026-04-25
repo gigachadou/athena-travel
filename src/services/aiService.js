@@ -4,9 +4,10 @@ import { isSupabaseConfigured } from '../lib/supabase';
 
 const API_KEY = import.meta.env.VITE_GROQ_API_KEY;
 const MODEL_NAME = import.meta.env.VITE_GROQ_MODEL || 'llama-3.3-70b-versatile';
-const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions'
+const BASE_URL = 'https://api.groq.com/openai/v1';
 
 const FALLBACK_DESTINATION_CONTEXT = [];
+let aiClient = null;
 
 const CONTEXT_CACHE_TTL = 60_000;
 let aiContextCache = {
@@ -224,7 +225,7 @@ export const getAIResponse = async (userMessage, history = [], options = {}) => 
       messages: [
         {
           role: 'system',
-          content: buildSystemPrompt(destinationContext, responseLanguage),
+          content: systemPrompt,
         },
         ...normalizeHistory(history),
         {

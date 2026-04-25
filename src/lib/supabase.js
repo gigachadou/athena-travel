@@ -30,9 +30,10 @@ const createSupabaseClient = () => {
   
   supabaseInstance = createClient(supabaseUrl, supabaseAnonKey, {
     auth: {
-      persistSession: false,
+      persistSession: true,
       autoRefreshToken: true,
       detectSessionInUrl: true,
+      storageKey: 'athena-travel-auth',
     },
     global: {
       headers: {
