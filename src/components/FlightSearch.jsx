@@ -104,7 +104,7 @@ const FlightSearch = () => {
     { id: 'hotels', icon: <Hotel size={20} />, label: 'Mehmonxonalar' },
     { id: 'trains', icon: <Train size={20} />, label: 'Poyezd biletlari' },
     { id: 'transfers', icon: <Truck size={20} />, label: 'Transferlar' },
-    { id: 'excursions', icon: <Ticket size={20} />, label: 'Ekskursiyalar' },
+    { id: 'guides', icon: <User size={20} />, label: 'Gid yollash' },
   ]
 
   const CityPicker = ({ onSelect, currentCity }) => (
@@ -233,6 +233,36 @@ const FlightSearch = () => {
         ))}
       </div>
 
+      {activeTab === 'guides' ? (
+      <div className="search-box-main">
+        <div className="guide-hire-box">
+          <div className="guide-hire-copy">
+            <h3 style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '22px' }}>
+              <User size={22} color="var(--accent-gold)" />
+              Gid yollash
+            </h3>
+            <p style={{ marginTop: '6px', color: 'var(--text-muted)', fontWeight: 600 }}>
+              Hudud, til va narx bo'yicha mos gidni toping yoki AI orqali tavsiya oling.
+            </p>
+          </div>
+
+          <div className="search-actions" style={{ marginTop: '28px', justifyContent: 'flex-start' }}>
+            <button
+              className="btn-ai-search"
+              onClick={() => navigate('/ai', { state: { initialMessage: "Menga O'zbekistonda sayohat uchun gid tanlashda yordam ber. Region, til va byudjet bo'yicha 3 ta variant tavsiya qil." } })}
+            >
+              <Sparkles size={20} />
+              <span>AI tavsiya</span>
+            </button>
+
+            <button className="btn-find-main" onClick={() => navigate('/guides')}>
+              <Search size={22} />
+              <span>Gidlarni ko'rish</span>
+            </button>
+          </div>
+        </div>
+      </div>
+      ) : (
       <div className="search-box-main">
         <div className="search-options">
           <div className="radio-group">
@@ -316,6 +346,7 @@ const FlightSearch = () => {
            </button>
         </div>
       </div>
+      )}
 
       {flights.length > 0 && (
         <div className="flights-results animate-up">

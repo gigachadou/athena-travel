@@ -61,8 +61,8 @@ const HomePage = () => {
                 <span>{userLoc.loading ? 'Joylashuv aniqlanmoqda...' : `${userLoc.city}, ${userLoc.region}`}</span>
             </div>
             <div className="hero-text">
-                <h1>Surxondaryoning <span className="text-accent-gold">Afsonalarini</span> kashf eting</h1>
-                <p>Termizdan Sangardakgacha - Janub quyoshi ostida <Sparkles size={18} color="var(--accent-gold)" /></p>
+                <h1>O'zbekistonni <span className="text-accent-gold">qayta kashf eting</span></h1>
+                <p>Yurtimiz bo'ylab unutilmas sayohatni rejalashtiring <Sparkles size={18} color="var(--accent-gold)" /></p>
             </div>
         </header>
 

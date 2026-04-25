@@ -1,0 +1,143 @@
+.services-page {
+  padding: 60px 20px 120px;
+  min-height: 80vh;
+}
+
+.services-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 28px;
+}
+
+.services-back {
+  width: 44px;
+  height: 44px;
+  border-radius: 16px;
+}
+
+.services-title h2 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 28px;
+  font-weight: 900;
+}
+
+.services-empty {
+  padding: 60px;
+  border-radius: 30px;
+  text-align: center;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.service-card {
+  padding: 22px;
+  border-radius: 26px;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.service-top {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 12px;
+}
+
+.service-avatar {
+  width: 56px;
+  height: 56px;
+  border-radius: 18px;
+  background: rgba(245, 158, 11, 0.12);
+  border: 1px solid rgba(245, 158, 11, 0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 900;
+  color: var(--accent-gold);
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.service-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.service-meta h3 {
+  font-size: 18px;
+  font-weight: 900;
+  margin-bottom: 6px;
+}
+
+.service-sub {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.service-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.5);
+  border: 1px solid var(--glass-border);
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--text-dark);
+}
+
+.service-desc {
+  color: var(--text-muted);
+  font-size: 14px;
+  line-height: 1.6;
+  margin: 10px 0 14px;
+}
+
+.service-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 0 6px;
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.service-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 700;
+  color: var(--text-dark);
+}
+
+.service-price {
+  font-weight: 900;
+  color: var(--accent-gold);
+}
+
+.service-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.service-actions .btn-primary,
+.service-actions .btn-accent {
+  flex: 1;
+  justify-content: center;
+  padding: 12px 16px;
+}
+
+@media (max-width: 640px) {
+  .services-empty {
+    padding: 40px 20px;
+  }
+  .service-actions {
+    flex-direction: column;
+  }
+}
+

@@ -85,7 +85,6 @@ const withRetry = async (fn, maxAttempts = 3, delayMs = 1000) => {
       return result
     } catch (error) {
       lastError = error
-      console.warn(`Attempt ${attempt}/${maxAttempts} failed:`, error?.message)
       
       // Check if error is retryable (network errors, timeouts)
       const isRetryable = 
@@ -103,7 +102,6 @@ const withRetry = async (fn, maxAttempts = 3, delayMs = 1000) => {
       
       // Exponential backoff
       const delay = delayMs * Math.pow(2, attempt - 1)
-      console.log(`Retrying in ${delay}ms...`)
       await new Promise(resolve => setTimeout(resolve, delay))
     }
   }
@@ -214,12 +212,10 @@ export const fetchPlaces = async () => {
   try {
     // Network status tekshirish
     if (!navigator.onLine) {
-      console.warn('⚠️ Internet ulanmasi yo\'q!')
       return FALLBACK_PLACES.map((row) => attachSource(normalizePlace(row), 'mock'))
     }
 
     const client = requireSupabase()
-    console.log('📥 Places yuklanmoqda...')
     
     const { data, error } = await withRetry(
       () => withTimeout(
@@ -234,13 +230,12 @@ export const fetchPlaces = async () => {
     if (!hasLoggedFetchPlacesError) {
       const message = err?.message || "Unknown fetchPlaces error"
       const code = err?.code ? ` (code: ${err.code})` : ''
-      console.error(`❌ fetchPlaces error: ${message}${code}`)
+      console.error(`fetchPlaces error: ${message}${code}`)
       if (err && typeof err === 'object') {
         console.debug('fetchPlaces raw error:', err)
       }
       hasLoggedFetchPlacesError = true
     }
-    console.log('📦 Fallback ma\'lumotlar ishlatilmoqda')
     return FALLBACK_PLACES.map((row) => attachSource(normalizePlace(row), 'mock'))
   }
 }
@@ -537,4 +532,67 @@ export const createTicketInDB = async (ticketData) => {
   const { data, error } = await client.from('tickets').insert([{ ...ticketData, status: 'checking' }]).select().single()
   if (error) throw error
   return data
+}
+
+// --- SERVICES (GID & TRANSPORT) ---
+export const fetchTourGuides = async () => {
+  if (!isSupabaseConfigured || !supabase) return []
+  try {
+    const { data, error } = await withTimeout(
+      supabase
+        .from('tour_guides')
+        .select('id,name,phone,languages,region,description,hourly_rate,rating,available,photo_url,created_at')
+        .eq('available', true)
+        .order('rating', { ascending: false })
+    )
+    if (error) throw error
+
+    return (data || []).map((row) => ({
+      id: row.id,
+      name: row.name || 'Gid',
+      phone: row.phone || '',
+      languages: row.languages || [],
+      region: row.region || '',
+      description: row.description || '',
+      hourlyRate: Number(row.hourly_rate ?? 0),
+      rating: Number(row.rating ?? 0),
+      photoUrl: row.photo_url || null,
+      createdAt: row.created_at,
+    }))
+  } catch (err) {
+    console.error('fetchTourGuides error:', err)
+    return []
+  }
+}
+
+export const fetchTransportProviders = async () => {
+  if (!isSupabaseConfigured || !supabase) return []
+  try {
+    const { data, error } = await withTimeout(
+      supabase
+        .from('transport_providers')
+        .select('id,driver_name,phone,vehicle_make,vehicle_model,license_plate,capacity,service_area,fare_per_km,description,available,photo_url,created_at')
+        .eq('available', true)
+        .order('created_at', { ascending: false })
+    )
+    if (error) throw error
+
+    return (data || []).map((row) => ({
+      id: row.id,
+      driverName: row.driver_name || 'Haydovchi',
+      phone: row.phone || '',
+      vehicleMake: row.vehicle_make || '',
+      vehicleModel: row.vehicle_model || '',
+      licensePlate: row.license_plate || '',
+      capacity: Number(row.capacity ?? 4),
+      serviceArea: row.service_area || '',
+      farePerKm: Number(row.fare_per_km ?? 0),
+      description: row.description || '',
+      photoUrl: row.photo_url || null,
+      createdAt: row.created_at,
+    }))
+  } catch (err) {
+    console.error('fetchTransportProviders error:', err)
+    return []
+  }
 }

@@ -27,8 +27,6 @@ const createSupabaseClient = () => {
   if (supabaseInstance) {
     return supabaseInstance
   }
-
-  console.log('🔧 Supabase client yaratilmoqda:', supabaseUrl)
   
   supabaseInstance = createClient(supabaseUrl, supabaseAnonKey, {
     auth: {
@@ -47,7 +45,6 @@ const createSupabaseClient = () => {
     },
     // Fetch options for better reliability
     fetch: (url, options = {}) => {
-      console.log('📡 Supabase request:', url)
       return fetch(url, {
         ...options,
         mode: 'cors',

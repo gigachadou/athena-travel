@@ -11,6 +11,8 @@ import AIPage from './pages/AIPage'
 import MapPage from './pages/MapPage'
 import ProfilePage from './pages/ProfilePage'
 import ThisPlacePage from './pages/ThisPlacePage'
+import GuidesPage from './pages/GuidesPage'
+import TransportServicesPage from './pages/TransportServicesPage'
 import NotFoundPage from './pages/NotFoundPage'
 import Layout from './components/Layout'
 import { PrivateRoute, PublicOnlyRoute } from './components/AuthRoute'
@@ -39,6 +41,8 @@ function App() {
           <Route path="/tickets" element={<TicketsListPage />} />
           <Route path="/ticket/:id" element={<TicketPage />} />
           <Route path="/ticket/:placeId/:ticketId" element={<TicketPage />} />
+          <Route path="/guides" element={<GuidesPage />} />
+          <Route path="/transport-services" element={<TransportServicesPage />} />
           <Route path="/map" element={<MapPage />} />
           <Route path="/profile" element={<PrivateRoute><ProfilePage /></PrivateRoute>} />
           <Route path="/place/:id" element={<ThisPlacePage />} />
