@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { X, Calendar, MapPin, User, ChevronRight, Ticket as TicketIcon, ArrowLeft } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import '../styles/BookingTicket.css'
+import logo from '../assets/logo.png'
 import { useAuth } from '../context/AuthContext'
 
 const BookingTicket = ({ place, onClose }) => {
@@ -28,8 +29,8 @@ const BookingTicket = ({ place, onClose }) => {
           <div className="ticket glass">
             <div className="ticket-header">
               <div className="ticket-logo">
-                <TicketIcon size={24} className="icon-gold" />
-                <span>AFINA PREMIUM</span>
+                <img src={logo} alt="Yo'lchiAI Logo" className="booking-logo" />
+                <span>YO'LCHIAI PREMIUM</span>
               </div>
               <div className="ticket-id">PROPOSAL</div>
             </div>

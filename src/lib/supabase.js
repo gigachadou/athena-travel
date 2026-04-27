@@ -37,7 +37,7 @@ const createSupabaseClient = () => {
     },
     global: {
       headers: {
-        'x-client-info': 'athena-travel@1.0.0',
+        'x-client-info': 'yolchiai@1.0.0',
         'Content-Type': 'application/json',
       },
     },

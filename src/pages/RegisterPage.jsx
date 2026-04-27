@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
-import { User, Mail, Lock, ChevronRight, Sparkles, ChevronLeft } from 'lucide-react'
+import { User, Mail, Lock, ChevronRight, ChevronLeft } from 'lucide-react'
+import logo from '../assets/logo.png'
 
 import '../styles/AuthPage.css'
 import { startSignupOtp } from '../services/emailVerificationService'
@@ -62,7 +63,7 @@ const RegisterPage = () => {
       </button>
       <div className="auth-card">
         <div className="auth-logo">
-          <Sparkles size={32} color="var(--primary-blue)" />
+          <img src={logo} alt="Yo'lchiAI Logo" />
         </div>
         <h1 className="auth-title">Ro'yxatdan o'tish</h1>
         <p className="auth-subtitle">Premium platformaga qo'shiling va barcha imkoniyatlardan foydalaning</p>

@@ -1,6 +1,7 @@
 import React from 'react'
 import { Search, MapPin, Compass, Mountain, Hotel, Utensils, Landmarks, Waves } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
+import logo from '../assets/logo.png'
 import './HeroSection.css'
 
 const CATEGORIES = [
@@ -25,6 +26,13 @@ const HeroSection = () => {
       </div>
       
       <div className="hero-content">
+        <div className="hero-brand animate-up">
+          <img src={logo} alt="Yo'lchiAI Logo" />
+          <div>
+            <p>Yo'lchiAI bilan aqlli sayohat va shaxsiy sayohat yordamchisi.</p>
+          </div>
+        </div>
+
         <div className="hero-badge glass animate-up">
             <Compass size={16} />
             <span>{t('explore_uzb', 'O\'zbekistonni kashf eting')}</span>

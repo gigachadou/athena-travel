@@ -278,8 +278,8 @@ const ThisPlacePage = () => {
           </button>
 
           <div className="header-brand" onClick={() => navigate('/')}>
-            <span className="brand-premium">Afina</span>
-            <span className="brand-travel">Travel</span>
+            <span className="brand-premium">Yo'lchi</span>
+            <span className="brand-travel">AI</span>
           </div>
 
           <div className="header-actions">

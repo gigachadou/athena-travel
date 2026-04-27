@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { useNavigate, Link, useLocation } from 'react-router-dom'
-import { User, Lock, ChevronRight, Sparkles, ChevronLeft } from 'lucide-react'
+import { User, Lock, ChevronRight, ChevronLeft } from 'lucide-react'
+import logo from '../assets/logo.png'
 
 import '../styles/AuthPage.css'
 import { useAuth } from '../context/AuthContext'
@@ -50,7 +51,7 @@ const LoginPage = () => {
       </button>
       <div className="auth-card">
         <div className="auth-logo">
-          <Sparkles size={32} color="var(--primary-blue)" />
+          <img src={logo} alt="Yo'lchiAI Logo" />
         </div>
         <h1 className="auth-title">Xush kelibsiz!</h1>
         <p className="auth-subtitle">Email yoki username va parol orqali tizimga kiring</p>

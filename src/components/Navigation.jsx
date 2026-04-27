@@ -14,26 +14,36 @@ export const Header = () => {
   return (
     <header className="header glass animate-up">
       <div className="container header-content">
+        
+        {/* LOGO */}
         <div className="logo" onClick={() => navigate('/')}>
-          <img src={logo} alt="Afina Travel Logo" className="logo-img" />
+          <img src={logo} alt="Yo'lchiAI Logo" className="logo-img" />
           <div className="logo-text">
-            <span className="premium">Afina</span>
-            <span className="platform">Travel</span>
+            <span className="premium">Yo'lchi</span>
+            <span className="platform">AI</span>
           </div>
         </div>
-        
+
+        {/* ACTIONS */}
         <div className="header-actions">
-          <Link to="/search" className={`action-btn ${location.pathname === '/search' ? 'active' : ''}`}>
+          <Link 
+            to="/search" 
+            className={`action-btn ${location.pathname === '/search' ? 'active' : ''}`}
+          >
             <Search size={22} color="var(--text-dark)" />
           </Link>
+
           {location.pathname !== '/tickets' && (
             <Link to="/tickets" className="btn-ai-header">
               <div className="ai-pulse"></div>
               <Ticket size={20} color="#0f172a" />
-              <span className="hide-mobile" style={{ color: '#0f172a' }}>{t('tickets', 'Biletlar')}</span>
+              <span className="hide-mobile" style={{ color: '#0f172a' }}>
+                {t('tickets', 'Biletlar')}
+              </span>
             </Link>
           )}
         </div>
+
       </div>
     </header>
   )
@@ -58,7 +68,9 @@ export const Footer = () => {
           <Link 
             key={item.id} 
             to={item.path} 
-            className={`nav-item ${location.pathname === item.path ? 'active' : ''} ${item.special ? 'special' : ''}`}
+            className={`nav-item ${
+              location.pathname === item.path ? 'active' : ''
+            } ${item.special ? 'special' : ''}`}
           >
             <div className="icon-wrapper">
               {item.icon}
@@ -67,12 +79,13 @@ export const Footer = () => {
           </Link>
         ))}
       </div>
+
       <style>{navStyles}</style>
     </nav>
   )
 }
 
-/* Updated styles for Navigation */
+/* Styles */
 const navStyles = `
 .btn-ai-header {
   background: var(--accent-gold) !important;
@@ -83,20 +96,25 @@ const navStyles = `
   box-shadow: 0 0 20px var(--accent-gold-glow) !important;
   border: 1px solid rgba(255, 255, 255, 0.2) !important;
 }
+
 .ai-pulse {
   background: white;
   opacity: 0.5;
 }
+
 .nav-item.active {
   color: var(--accent-gold) !important;
 }
+
 .nav-item.active svg {
   color: var(--accent-gold) !important;
 }
+
 .nav-item.special .icon-wrapper {
   background: var(--accent-gold) !important;
   color: #0f172a !important;
 }
+
 .nav-item.special.active .icon-wrapper {
   box-shadow: 0 0 25px var(--accent-gold-glow) !important;
 }

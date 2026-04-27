@@ -1,4 +1,4 @@
-const STORAGE_KEY = 'afina_tickets'
+const STORAGE_KEY = 'yolchiai_tickets'
 
 const safeParse = (value, fallback) => {
   try {

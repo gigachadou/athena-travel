@@ -1,7 +1,7 @@
 import emailjs from '@emailjs/browser'
 
-const STORAGE_PREFIX = 'athena_pending_signup_v1:'
-const ACTIVE_EMAIL_KEY = 'athena_pending_signup_email_v1'
+const STORAGE_PREFIX = 'yolchiai_pending_signup_v1:'
+const ACTIVE_EMAIL_KEY = 'yolchiai_pending_signup_email_v1'
 const OTP_TTL_MS = 10 * 60 * 1000
 
 const getEmailJsConfig = () => {
