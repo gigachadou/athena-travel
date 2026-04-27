@@ -172,8 +172,12 @@
 
 @media (max-width: 480px) {
   .auth-card {
-    padding: 45px 25px;
+    padding: 36px 20px;
     border-radius: 30px;
+  }
+  .auth-logo {
+    margin-bottom: 22px;
+    padding: 14px;
   }
   .btn-back-auth {
     top: 15px;
@@ -183,5 +187,24 @@
   }
   .auth-title {
     font-size: 26px;
+  }
+  .auth-subtitle {
+    margin-bottom: 28px;
+    font-size: 15px;
+  }
+  .input-field {
+    padding: 0 16px;
+    border-radius: 16px;
+  }
+  .input-field input {
+    padding: 15px 10px;
+    font-size: 15px;
+  }
+  .auth-btn {
+    padding: 15px;
+    font-size: 16px;
+  }
+  .auth-footer {
+    margin-top: 28px;
   }
 }
