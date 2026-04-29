@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { 
   User, Settings as SettingsIcon, Shield, LogOut, Camera, X, Check, 
   Moon, Sun, Ticket as TicketIcon, Heart, Plane, Train, Clock, 
-  MapPin, ArrowRight, Activity, Truck, ChevronLeft, Building, Coffee, Globe, Info
+  MapPin, ArrowRight, Activity, Truck, ChevronLeft, Building, Coffee, Globe, Info, Sparkles
 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import '../styles/ProfilePage.css'
@@ -486,6 +486,13 @@ const ProfilePage = () => {
             <div className="menu-text">
                 <h4>Transport</h4>
                 <p>Jonli qatnov jadvali</p>
+            </div>
+        </div>
+        <div className="menu-card glass teal" onClick={() => navigate('/guides')}>
+            <Sparkles size={28} />
+            <div className="menu-text">
+                <h4>Gid yollash</h4>
+                <p>Tajribali gid tanlash</p>
             </div>
         </div>
         <div className="menu-card glass purple" onClick={() => navigate('/transport-services')}>

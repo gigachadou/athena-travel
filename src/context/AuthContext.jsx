@@ -48,14 +48,17 @@ export const AuthProvider = ({ children }) => {
       return
     }
 
-    try {
-      const nextProfile = await fetchProfile(authUser.id)
-      setProfile(nextProfile)
-      setUser(buildAuthUser({ user: authUser, profile: nextProfile }))
-    } catch (err) {
-      console.error('Error hydrating user:', err)
-      setProfile(null)
-    }
+    setUser(buildAuthUser({ user: authUser, profile: null }))
+    setProfile(null)
+
+    fetchProfile(authUser.id)
+      .then((nextProfile) => {
+        setProfile(nextProfile)
+        setUser(buildAuthUser({ user: authUser, profile: nextProfile }))
+      })
+      .catch((err) => {
+        console.error('Error hydrating user:', err)
+      })
   }
 
   const clearAuthTimeout = () => {}

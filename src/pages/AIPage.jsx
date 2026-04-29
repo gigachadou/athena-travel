@@ -37,7 +37,7 @@ const AIPage = () => {
   const chatEndRef = useRef(null);
   const recognitionRef = useRef(null);
   const synthRef = useRef(null);
-  const initialMessageHandledRef = useRef(false);
+  const handledInitialMessageRef = useRef('');
 
   useEffect(() => {
     synthRef.current = window.speechSynthesis || null;
@@ -73,12 +73,13 @@ const AIPage = () => {
   }, []);
 
   useEffect(() => {
-    if (!location.state?.initialMessage || initialMessageHandledRef.current) {
+    const nextInitialMessage = location.state?.initialMessage;
+    if (!nextInitialMessage || handledInitialMessageRef.current === nextInitialMessage) {
       return;
     }
 
-    initialMessageHandledRef.current = true;
-    handleSendRequest(location.state.initialMessage);
+    handledInitialMessageRef.current = nextInitialMessage;
+    handleSendRequest(nextInitialMessage);
   }, [location.state]);
 
   useEffect(() => {

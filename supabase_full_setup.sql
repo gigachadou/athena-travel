@@ -88,6 +88,26 @@ create table if not exists public.place_ai_texts (
   unique(place_id, locale)
 );
 
+-- HOME NEWS (admin-curated carousel on the home page)
+create table if not exists public.home_news (
+  id uuid primary key default gen_random_uuid(),
+  title text not null,
+  subtitle text default 'News',
+  description text not null,
+  location text,
+  image_url text not null,
+  cta_label text not null default 'Batafsil',
+  place_id uuid references public.places(id) on delete set null,
+  display_order integer not null default 0,
+  is_active boolean not null default true,
+  published_at timestamptz not null default timezone('utc'::text, now()),
+  created_at timestamptz not null default timezone('utc'::text, now()),
+  updated_at timestamptz not null default timezone('utc'::text, now())
+);
+
+create index if not exists idx_home_news_active_order
+on public.home_news (is_active, display_order, published_at desc);
+
 -- COMMENTS (rating + text)
 create table if not exists public.comments (
   id uuid primary key default gen_random_uuid(),
@@ -254,6 +274,11 @@ create trigger set_place_ai_texts_updated_at
 before update on public.place_ai_texts
 for each row execute procedure public.set_updated_at();
 
+drop trigger if exists set_home_news_updated_at on public.home_news;
+create trigger set_home_news_updated_at
+before update on public.home_news
+for each row execute procedure public.set_updated_at();
+
 drop trigger if exists set_tickets_updated_at on public.tickets;
 create trigger set_tickets_updated_at
 before update on public.tickets
@@ -359,6 +384,7 @@ grant execute on function public.get_comments_with_user_metadata(uuid) to anon, 
 alter table public.profiles enable row level security;
 alter table public.places enable row level security;
 alter table public.place_ai_texts enable row level security;
+alter table public.home_news enable row level security;
 alter table public.comments enable row level security;
 alter table public.favorites enable row level security;
 alter table public.transit_schedules enable row level security;
@@ -394,6 +420,37 @@ drop policy if exists "Place AI texts are viewable by everyone" on public.place_
 create policy "Place AI texts are viewable by everyone"
 on public.place_ai_texts for select
 using (true);
+
+-- HOME NEWS: public can read active slides; admins manage via app_metadata.role = admin
+drop policy if exists "Active home news are viewable by everyone" on public.home_news;
+create policy "Active home news are viewable by everyone"
+on public.home_news for select
+using (is_active = true);
+
+drop policy if exists "Admins can view all home news" on public.home_news;
+create policy "Admins can view all home news"
+on public.home_news for select
+to authenticated
+using ((auth.jwt() -> 'app_metadata' ->> 'role') = 'admin');
+
+drop policy if exists "Admins can insert home news" on public.home_news;
+create policy "Admins can insert home news"
+on public.home_news for insert
+to authenticated
+with check ((auth.jwt() -> 'app_metadata' ->> 'role') = 'admin');
+
+drop policy if exists "Admins can update home news" on public.home_news;
+create policy "Admins can update home news"
+on public.home_news for update
+to authenticated
+using ((auth.jwt() -> 'app_metadata' ->> 'role') = 'admin')
+with check ((auth.jwt() -> 'app_metadata' ->> 'role') = 'admin');
+
+drop policy if exists "Admins can delete home news" on public.home_news;
+create policy "Admins can delete home news"
+on public.home_news for delete
+to authenticated
+using ((auth.jwt() -> 'app_metadata' ->> 'role') = 'admin');
 
 -- COMMENTS: public read, authenticated write (own only)
 drop policy if exists "Comments are viewable by everyone" on public.comments;
@@ -543,6 +600,14 @@ values
 ('Kampirtepa xarobalari', 'Amudaryo bo''yi', 'Ellinistik davrga oid qadimiy shahar xarobalari bilan mashhur arxeologik maydon.', 'https://upload.wikimedia.org/wikipedia/commons/2/2d/Kampyrtepa.jpg', 24000, 'historical', 'termez', '30 km', array['Gid','Tarix','Suratga olish'], 'Bahor', 'O''rta', '2-3 soat'),
 ('Omonxona buloq hududi', 'Boysun etaklari', 'Toza buloq suvi, salqin havo va qisqa sayrlar uchun yoqimli dam olish hududi.', 'https://images.unsplash.com/photo-1502082553048-f009c37129b9?w=1200', 14000, 'nature', 'boysun', '138 km', array['Tabiat','Piknik','Oila uchun qulay'], 'Yoz', 'Oson', '1-2 soat');
 
+-- Home carousel news seed. Admins decide which rows stay active.
+insert into public.home_news (title, subtitle, description, location, image_url, cta_label, display_order, is_active)
+values
+('Sangardak sharsharasi', 'Yangi marshrut', 'Sariosiyo tog''lari bag''ridagi salqin manzara endi asosiy tavsiyalar ro''yxatida.', 'Sariosiyo tumani', 'https://www.advantour.com/img/uzbekistan/termez/sangardak-waterfall/sangardak-waterfall2.jpg', 'Ko''rish', 1, true),
+('Boysun tog''lari', 'Dam olish uchun ochildi', 'Piyoda sayr, toza havo va mahalliy yo''nalishlar uchun yangi tanlangan maskan.', 'Boysun tumani', 'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?w=1200', 'Batafsil', 2, true),
+('Kampirtepa xarobalari', 'Tarixiy yangilik', 'Amudaryo bo''yidagi qadimiy shahar xarobalari sayohatchilar uchun qayta tavsiya qilindi.', 'Amudaryo bo''yi', 'https://upload.wikimedia.org/wikipedia/commons/2/2d/Kampyrtepa.jpg', 'Sayohat qilish', 3, true)
+on conflict do nothing;
+
 -- Transit schedules seed (transit_setup.sql content)
 insert into public.transit_schedules (category, type, number, route, depart_time, arrive_time, platform, status) values
 ('surkhandarya', 'Poyezd', '079F', 'Toshkent - Termiz', '19:40', '08:50', '2', 'On Time'),
@@ -573,6 +638,7 @@ grant usage on schema public to anon, authenticated;
 
 grant select on public.places to anon, authenticated;
 grant select on public.place_ai_texts to anon, authenticated;
+grant select on public.home_news to anon, authenticated;
 grant select on public.comments to anon, authenticated;
 grant select on public.transit_schedules to anon, authenticated;
 grant select on public.tour_guides to anon, authenticated;
@@ -582,6 +648,7 @@ grant select on public.tickets to authenticated;
 grant select on public.favorites to authenticated;
 
 grant insert, update, delete on public.profiles to authenticated;
+grant insert, update, delete on public.home_news to authenticated;
 grant insert, update, delete on public.comments to authenticated;
 grant insert, delete on public.favorites to authenticated;
 grant insert, update, delete on public.tickets to authenticated;
