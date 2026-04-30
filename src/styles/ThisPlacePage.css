@@ -465,6 +465,9 @@
   }
 
   .nearby-item {
+    transform: scale(1.02);
+  }
+
   .details-header.premium-header {
     top: 14px;
     left: 12px;
@@ -519,9 +522,11 @@
 
   .image-gallery .place-title {
     font-size: 24px;
+  }
 
   .rating-badge,
   .location-row {
     width: 100%;
   }
 }
+
