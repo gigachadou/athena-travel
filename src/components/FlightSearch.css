@@ -1,4 +1,6 @@
 .flight-search-container {
+  width: min(100%, 1180px);
+  margin: 0 auto 60px;
   margin-bottom: 60px;
   border-radius: 40px;
   overflow: hidden;
@@ -15,6 +17,13 @@
   background: #1a1f2b;
   padding: 0 20px;
   gap: 5px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.search-tabs::-webkit-scrollbar {
+  display: none;
 }
 
 .tab-btn {
@@ -30,6 +39,7 @@
   cursor: pointer;
   transition: all 0.3s ease;
   position: relative;
+  flex: 0 0 auto;
 }
 
 .tab-btn:hover {
@@ -62,6 +72,7 @@
 .radio-group {
   display: flex;
   gap: 30px;
+  flex-wrap: wrap;
 }
 
 .radio-label, .check-label {
@@ -72,9 +83,17 @@
   font-weight: 700;
   color: #1e293b;
   cursor: pointer;
+  position: relative;
 }
 
 /* Orange Radio Accents */
+.radio-label input[type="radio"],
+.check-label input[type="checkbox"] {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
 .custom-radio {
   width: 20px;
   height: 20px;
@@ -82,6 +101,7 @@
   border-radius: 50%;
   position: relative;
   transition: 0.3s;
+  flex-shrink: 0;
 }
 
 input[type="radio"]:checked + .custom-radio {
@@ -97,10 +117,31 @@ input[type="radio"]:checked + .custom-radio::after {
   border-radius: 50%;
 }
 
-.check-label input[type="checkbox"] {
-  width: 18px;
-  height: 18px;
-  accent-color: #f59e0b;
+.custom-check {
+  width: 20px;
+  height: 20px;
+  border: 2px solid #e2e8f0;
+  border-radius: 6px;
+  position: relative;
+  transition: 0.3s;
+  flex-shrink: 0;
+}
+
+.check-label input[type="checkbox"]:checked + .custom-check {
+  border-color: #f59e0b;
+  background: #f59e0b;
+}
+
+.check-label input[type="checkbox"]:checked + .custom-check::after {
+  content: '';
+  position: absolute;
+  left: 6px;
+  top: 2px;
+  width: 4px;
+  height: 9px;
+  border: solid white;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
 }
 
 /* --- ROW INPUTS --- */
@@ -208,6 +249,7 @@ input[type="radio"]:checked + .custom-radio::after {
   display: flex;
   justify-content: flex-end;
   gap: 20px;
+  flex-wrap: wrap;
 }
 
 .btn-ai-search {
@@ -264,7 +306,7 @@ input[type="radio"]:checked + .custom-radio::after {
   position: absolute;
   top: 100%;
   left: 0;
-  width: 350px;
+  width: min(350px, calc(100vw - 48px));
   background: white;
   border-radius: 20px;
   box-shadow: 0 20px 50px rgba(0,0,0,0.15);
@@ -535,6 +577,20 @@ input[type="radio"]:checked + .custom-radio::after {
 .flight-footer strong.scheduled { color: #f59e0b; }
 
 @media (max-width: 1024px) {
+  .flight-search-container {
+    border-radius: 30px;
+  }
+
+  .search-box-main {
+    padding: 28px 24px;
+  }
+
+  .search-options {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 18px;
+  }
+
   .search-row {
     flex-direction: column;
     gap: 15px;
@@ -546,7 +602,20 @@ input[type="radio"]:checked + .custom-radio::after {
     border-radius: 20px !important;
     border: 1px solid #f1f5f9;
     background: #f8fafc;
+    padding: 18px 22px;
   }
+
+  .swap-btn-circle {
+    position: static;
+    left: auto;
+    margin: -4px auto;
+    transform: rotate(90deg);
+  }
+
+  .swap-btn-circle:hover {
+    transform: rotate(270deg);
+  }
+
   .flight-main {
     flex-direction: column;
     gap: 30px;
@@ -561,5 +630,187 @@ input[type="radio"]:checked + .custom-radio::after {
   }
   .time-path {
     width: 120px;
+  }
+}
+
+@media (max-width: 768px) {
+  .flight-search-container {
+    margin-bottom: 36px;
+    border-radius: 24px;
+    box-shadow: 0 20px 45px rgba(0, 0, 0, 0.08);
+  }
+
+  .search-tabs {
+    padding: 0 12px;
+    gap: 8px;
+  }
+
+  .tab-btn {
+    gap: 10px;
+    padding: 16px 18px;
+    font-size: 13px;
+  }
+
+  .tab-btn.active {
+    margin-top: 8px;
+    border-radius: 16px 16px 0 0;
+  }
+
+  .search-box-main {
+    padding: 20px 16px;
+  }
+
+  .radio-group {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 14px;
+    width: 100%;
+  }
+
+  .checkbox-group {
+    width: 100%;
+  }
+
+  .search-row {
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+
+  .input-block {
+    padding: 16px 18px;
+    gap: 6px;
+  }
+
+  .display-val {
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .primary-val,
+  .date-val {
+    font-size: 17px;
+  }
+
+  .secondary-val {
+    font-size: 13px;
+  }
+
+  .date-group {
+    width: 100%;
+    justify-content: space-between;
+    gap: 10px;
+  }
+
+  .search-actions {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .btn-ai-search,
+  .btn-find-main {
+    width: 100%;
+    min-width: 0;
+    padding: 16px 20px;
+    border-radius: 16px;
+    font-size: 16px;
+  }
+
+  .city-picker {
+    width: min(320px, calc(100vw - 48px));
+    padding: 18px;
+  }
+
+  .city-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .pax-row {
+    gap: 12px;
+    align-items: flex-start;
+  }
+
+  .pax-ctrl {
+    gap: 10px;
+  }
+
+  .flight-card {
+    padding: 20px;
+    border-radius: 22px;
+  }
+
+  .flight-main {
+    gap: 22px;
+    align-items: stretch;
+  }
+
+  .airline-info {
+    width: 100%;
+    gap: 14px;
+  }
+
+  .flight-times {
+    justify-content: space-between;
+    gap: 14px;
+    flex-wrap: wrap;
+  }
+
+  .time-path {
+    width: 100%;
+    order: 3;
+  }
+
+  .f-time {
+    font-size: 22px;
+  }
+
+  .flight-price {
+    min-width: 0;
+    width: 100%;
+    text-align: left;
+  }
+
+  .btn-book-flight {
+    width: 100%;
+    margin-top: 14px;
+  }
+
+  .flight-footer {
+    flex-direction: column;
+    gap: 8px;
+  }
+}
+
+@media (max-width: 480px) {
+  .flight-search-container {
+    border-radius: 20px;
+  }
+
+  .tab-btn {
+    padding: 14px 16px;
+    font-size: 12px;
+  }
+
+  .radio-label,
+  .check-label {
+    font-size: 13px;
+  }
+
+  .input-block label {
+    font-size: 9px;
+    letter-spacing: 0.8px;
+  }
+
+  .primary-val,
+  .date-val {
+    font-size: 16px;
+  }
+
+  .swap-btn-circle {
+    width: 38px;
+    height: 38px;
+  }
+
+  .city-picker {
+    width: calc(100vw - 32px);
   }
 }

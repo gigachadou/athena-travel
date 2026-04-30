@@ -43,6 +43,7 @@
 
 html {
   font-size: 16px;
+  -webkit-text-size-adjust: 100%;
 }
 
 body {
@@ -51,6 +52,20 @@ body {
   color: var(--text-dark);
   line-height: 1.5;
   overflow-x: hidden;
+}
+
+img,
+svg,
+video,
+canvas {
+  max-width: 100%;
+}
+
+input,
+button,
+textarea,
+select {
+  font: inherit;
 }
 
 /* Fluid Typography */
@@ -142,6 +157,12 @@ button {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   gap: 1.5rem;
+}
+
+@media (max-width: 768px) {
+  .container {
+    padding: 0 1.125rem;
+  }
 }
 
 @media (max-width: 640px) {

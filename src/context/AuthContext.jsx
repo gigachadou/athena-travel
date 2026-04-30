@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react'
 import { fetchProfile, signInWithPassword, signOut, signUpWithPassword, updateProfile } from '../services/databaseService'
-import { isSupabaseConfigured, supabase } from '../lib/supabase'
+import { useSupabaseAuth } from '../hooks/useSupabaseAuth'
 
 const AuthContext = createContext(null)
 
@@ -34,15 +34,13 @@ const buildAuthUser = ({ user, profile }) => {
 }
 
 export const AuthProvider = ({ children }) => {
-  const [session, setSession] = useState(null)
+  const { session, loading: sessionLoading, authError } = useSupabaseAuth()
   const [user, setUser] = useState(null)
   const [profile, setProfile] = useState(null)
-  const [loading, setLoading] = useState(true)
-  const [authError, setAuthError] = useState('')
+  const [profileLoading, setProfileLoading] = useState(true)
 
   const hydrateUser = async (authUser) => {
     if (!authUser) {
-      setSession(null)
       setUser(null)
       setProfile(null)
       return
@@ -75,53 +73,24 @@ export const AuthProvider = ({ children }) => {
   }
 
   useEffect(() => {
-    if (!isSupabaseConfigured) {
-      setAuthError('Supabase sozlamalari topilmadi yoki noto‘g‘ri. Iltimos, .env faylini tekshiring.')
-      setLoading(false)
-      return undefined
-    }
-
     let active = true
+    setProfileLoading(true)
 
-    const restoreSession = async () => {
-      try {
-        const { data, error } = await supabase.auth.getSession()
-        if (error) throw error
-        if (!active) return
-
-        await updateAuthState(data.session)
-      } catch (error) {
-        console.error('Failed to restore Supabase session:', error)
-        if (active) {
-          setAuthError('Supabase sessiyasi tiklanmadi: ' + (error?.message || 'noma’lum xato'))
-        }
-      } finally {
-        if (active) setLoading(false)
-      }
+    const syncUser = async () => {
+      await hydrateUser(session?.user ?? null)
+      if (active) setProfileLoading(false)
     }
 
-    restoreSession()
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (_event, nextSession) => {
-      if (!active) return
-      setLoading(true)
-      await updateAuthState(nextSession)
-      if (active) setLoading(false)
-    })
+    syncUser()
 
     return () => {
       active = false
-      clearAuthTimeout()
-      subscription.unsubscribe()
     }
-  }, [])
+  }, [session])
 
   const login = async ({ identifier, password }) => {
     const { user: authenticatedUser, session: nextSession } = await signInWithPassword({ identifier, password })
     const authUser = nextSession?.user ?? authenticatedUser
-    setSession(nextSession ?? null)
     await hydrateUser(authUser)
     return authUser
   }
@@ -131,7 +100,6 @@ export const AuthProvider = ({ children }) => {
       const { user: registeredUser, session: nextSession } = await signUpWithPassword({ email, password, username, fullName })
 
       if (nextSession?.user) {
-        setSession(nextSession)
         await hydrateUser(nextSession.user)
       }
 
@@ -170,10 +138,11 @@ export const AuthProvider = ({ children }) => {
 
   const logout = async () => {
     await signOut()
-    setSession(null)
     setUser(null)
     setProfile(null)
   }
+
+  const loading = sessionLoading || profileLoading
 
   return (
     <AuthContext.Provider
