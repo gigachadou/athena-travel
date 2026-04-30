@@ -228,6 +228,17 @@
   margin-bottom: 20px;
 }
 
+.ai-recommendation-button {
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 10px 24px rgba(255, 122, 26, 0.22);
+}
+
+.ai-recommendation-button:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 16px 34px rgba(255, 122, 26, 0.3);
+}
+
 /* ===== RATING ===== */
 
 .rating-display {
@@ -512,12 +523,5 @@
   .rating-badge,
   .location-row {
     width: 100%;
-  }
-
-  .nearby-item,
-  .comment-user {
-    flex-direction: column;
-    gap: 8px;
-    align-items: flex-start;
   }
 }

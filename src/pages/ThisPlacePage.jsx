@@ -27,7 +27,6 @@ import {
   Navigation
 } from 'lucide-react'
 import Loading from '../components/Loading'
-import BookingTicket from '../components/BookingTicket'
 import { fetchPlacesFromOTM } from '../utils/api'
 import { addComment, addFavorite, deleteComment, fetchCommentsByPlaceId, fetchIsFavorite, fetchPlaceAiText, fetchPlaceById, removeFavorite } from '../services/databaseService'
 import { useAuth } from '../context/AuthContext'
@@ -146,7 +145,21 @@ const ThisPlacePage = () => {
 
   // Navigation handlers
   const handleBookingClick = () => {
+    if (placeData?.meta?.type !== 'hotels') return
     navigate(`/ticket/${id}`)
+  }
+
+  const handleAiRecommendationClick = () => {
+    const meta = placeData?.meta || {}
+    const prompt = [
+      `${placeData.title} haqida batafsil ma'lumot ber.`,
+      `Joylashuv: ${meta.location || 'noma\'lum'}.`,
+      `Turi: ${meta.type || 'sayohat joyi'}.`,
+      placeData.extract ? `Qisqa tavsif: ${placeData.extract}` : '',
+      "Tarixi, borish uchun eng yaxshi vaqt, narx/bron masalasi, yaqin atrofdagi qiziqarli joylar va 1 kunlik reja bilan tushuntir.",
+    ].filter(Boolean).join(' ')
+
+    navigate('/ai', { state: { initialMessage: prompt } })
   }
 
   const handleBackClick = () => {
@@ -291,10 +304,12 @@ const ThisPlacePage = () => {
               <Heart size={24} fill={isLiked ? '#FF4757' : 'none'} />
             </button>
 
-            <button className="book-button" onClick={handleBookingClick}>
-              <CheckCircle size={20} />
-              {t('book_now', 'Band qilish')}
-            </button>
+            {placeData.meta?.type === 'hotels' && (
+              <button className="book-button" onClick={handleBookingClick}>
+                <CheckCircle size={20} />
+                {t('book_now', 'Band qilish')}
+              </button>
+            )}
           </div>
         </div>
       </header>
@@ -321,10 +336,10 @@ const ThisPlacePage = () => {
           {/* Title Section */}
           <section className="title-section">
             <div className="title-content">
-              <div className="category-badge">
+              <button className="category-badge ai-recommendation-button" type="button" onClick={handleAiRecommendationClick}>
                 <Sparkles size={16} />
                 <span>{copy.mustVisitLabel || t('must_visit', 'Borish Shart!')}</span>
-              </div>
+              </button>
 
               <h1 className="place-title">{placeData.title}</h1>
 

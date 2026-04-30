@@ -1,25 +1,28 @@
-import React, { useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import PostCard from '../components/PostCard'
 import '../styles/HomePage.css'
 import SidebarFilter from '../components/SidebarFilter'
-import FlightSearch from '../components/FlightSearch'
-import { Sparkles, Navigation, Filter, X } from 'lucide-react'
-import { useGeolocation } from '../hooks/useGeolocation'
+import HomeNewsCarousel from '../components/HomeNewsCarousel'
 import Loading from '../components/Loading'
-import { fetchPlaces } from '../services/databaseService'
-import { createDefaultFilters, deriveFilterOptions, filterPlaces, hasActiveFilters } from '../utils/placeFilters'
+import { useAuth } from '../context/AuthContext'
+import { fetchHomeNews, fetchPersonalizedPlaces } from '../services/databaseService'
+import { createDefaultFilters, deriveFilterOptions, filterPlaces } from '../utils/placeFilters'
+
+const PLACES_PAGE_SIZE = 8
 
 const HomePage = () => {
   const { t } = useTranslation()
-  const userLoc = useGeolocation()
+  const { user } = useAuth()
   const [places, setPlaces] = useState([])
+  const [newsItems, setNewsItems] = useState([])
   const [loading, setLoading] = useState(true)
+  const [loadingMore, setLoadingMore] = useState(false)
+  const [hasMore, setHasMore] = useState(true)
   const [error, setError] = useState('')
-  const [dataSource, setDataSource] = useState('supabase')
-  const [searchTerm, setSearchTerm] = useState('')
   const [filters, setFilters] = useState(createDefaultFilters())
-  const [isFilterOpen, setIsFilterOpen] = useState(false)
+  const loadMoreRef = useRef(null)
+  const maxPriceRef = useRef(0)
 
   const handleFilterChange = (newFilters) => {
     setFilters(prev => ({ ...prev, ...newFilters }))
@@ -31,21 +34,89 @@ const HomePage = () => {
       setError('')
 
       try {
-        const data = await fetchPlaces()
-        setPlaces(data)
-        setFilters(createDefaultFilters(Math.max(...data.map((place) => place.priceValue), 0)))
+        const placeResult = await fetchPersonalizedPlaces({ userId: user?.id, pageSize: PLACES_PAGE_SIZE })
+        const firstPlaces = placeResult.places || []
+        const maxPrice = Math.max(0, ...firstPlaces.map((place) => place.priceValue || 0))
+
+        maxPriceRef.current = maxPrice
+        setPlaces(firstPlaces)
+        setHasMore(placeResult.hasMore)
+        setFilters(createDefaultFilters(maxPrice))
       } catch (err) {
         console.error('Failed to load places:', err)
         setError("Joylarni yuklab bo'lmadi.")
+        setHasMore(false)
       } finally {
         setLoading(false)
       }
     }
 
     loadPlaces()
+  }, [user?.id])
+
+  useEffect(() => {
+    let active = true
+
+    fetchHomeNews()
+      .then((news) => {
+        if (active) setNewsItems(news)
+      })
+      .catch((err) => {
+        console.error('Failed to load home news:', err)
+        if (active) setNewsItems([])
+      })
+
+    return () => {
+      active = false
+    }
   }, [])
 
-  const filteredPosts = filterPlaces(places, searchTerm, filters)
+  const loadMorePlaces = useCallback(async () => {
+    if (loading || loadingMore || !hasMore) return
+
+    setLoadingMore(true)
+    try {
+      const result = await fetchPersonalizedPlaces({
+        userId: user?.id,
+        pageSize: PLACES_PAGE_SIZE,
+        excludeIds: places.map((place) => place.id),
+      })
+
+      const nextPlaces = result.places || []
+      const known = new Set(places.map((place) => String(place.id)))
+      const merged = [...places, ...nextPlaces.filter((place) => !known.has(String(place.id)))]
+      const nextMaxPrice = Math.max(0, ...merged.map((place) => place.priceValue || 0))
+
+      setPlaces(merged)
+      setFilters((currentFilters) => {
+        const wasAtMax = Number(currentFilters.priceRange || 0) >= Number(maxPriceRef.current || 0)
+        maxPriceRef.current = nextMaxPrice
+        return wasAtMax ? { ...currentFilters, priceRange: nextMaxPrice } : currentFilters
+      })
+      setHasMore(Boolean(result.hasMore && nextPlaces.length))
+    } catch (err) {
+      console.error('Failed to load more places:', err)
+      setHasMore(false)
+    } finally {
+      setLoadingMore(false)
+    }
+  }, [hasMore, loading, loadingMore, places, user?.id])
+
+  useEffect(() => {
+    const target = loadMoreRef.current
+    if (!target) return undefined
+
+    const observer = new IntersectionObserver((entries) => {
+      if (entries[0]?.isIntersecting) {
+        loadMorePlaces()
+      }
+    }, { rootMargin: '500px 0px' })
+
+    observer.observe(target)
+    return () => observer.disconnect()
+  }, [loadMorePlaces])
+
+  const filteredPosts = filterPlaces(places, '', filters)
   const filterOptions = deriveFilterOptions(places)
   const defaultFilters = createDefaultFilters(filterOptions.maxPrice)
 
@@ -55,28 +126,11 @@ const HomePage = () => {
 
   return (
     <div className="home-page fade-in">
-      <div className="container" style={{ paddingTop: '40px' }}>
-        <header className="home-hero-compact animate-up">
-            <div className="location-auto-badge glass-full animate-pop">
-                <Navigation size={14} color="var(--accent-gold)" />
-                <span>{userLoc.loading ? 'Joylashuv aniqlanmoqda...' : `${userLoc.city}, ${userLoc.region}`}</span>
-            </div>
-            <div className="hero-text">
-                <h1>O'zbekistonni <span className="text-accent-gold">qayta kashf eting</span></h1>
-                <p>Yurtimiz bo'ylab unutilmas sayohatni rejalashtiring <Sparkles size={18} color="var(--accent-gold)" /></p>
-            </div>
-        </header>
+      <div className="home-news-shell">
+        <HomeNewsCarousel items={newsItems} />
+      </div>
 
-        <section className="search-section-advanced animate-up" style={{ marginBottom: '40px' }}>
-           <FlightSearch />
-        </section>
-
-        {dataSource === 'mock' && (
-          <div className="glass" style={{ padding: '14px 18px', borderRadius: '18px', marginBottom: '20px', color: '#9a3412', background: 'rgba(251, 191, 36, 0.14)', border: '1px solid rgba(251, 191, 36, 0.35)' }}>
-            Jonli Supabase ma'lumotlari o'rniga vaqtincha local mock data ko'rsatilmoqda.
-          </div>
-        )}
-
+      <div className="container home-feed-container">
         <div className="home-layout-wrapper">
           <SidebarFilter
             filters={filters}
@@ -111,6 +165,10 @@ const HomePage = () => {
                   <p>{error ? "Supabase ma'lumotlarini tekshirib ko'ring." : "Qidiruv shartlarini o'zgartirib ko'ring"}</p>
                 </div>
               )}
+              <div ref={loadMoreRef} className="home-load-more">
+                {loadingMore && <Loading message="Yana joylar yuklanmoqda..." />}
+                {!hasMore && places.length > 0 && <span>Barcha mos joylar ko'rsatildi</span>}
+              </div>
             </section>
           </main>
         </div>
@@ -143,45 +201,18 @@ const HomePage = () => {
       </div>
 
       <style>{`
-        .home-hero-compact {
-          margin-bottom: 40px;
-          text-align: left;
+        .home-news-shell {
+          width: calc(100vw - 48px);
+          margin-left: calc(50% - 50vw + 24px);
+          padding-top: 28px;
         }
-        .text-accent-gold {
-          color: var(--accent-gold);
-          text-shadow: 0 0 15px var(--accent-gold-glow);
+        .home-feed-container {
+          padding-top: 8px;
         }
         .home-layout-wrapper {
           display: grid;
           grid-template-columns: 320px 1fr;
           gap: 30px;
-        }
-        .search-section {
-          margin-bottom: 30px;
-        }
-        .search-bar-premium {
-          display: flex;
-          align-items: center;
-          gap: 15px;
-          padding: 18px 30px;
-          border-radius: 24px;
-          border: 2px solid transparent;
-          transition: var(--transition);
-        }
-        .search-bar-premium:focus-within {
-          border-color: var(--accent-gold);
-          box-shadow: 0 0 30px var(--accent-gold-glow);
-        }
-        .search-bar-premium input {
-          width: 100%;
-          border: none;
-          background: none;
-          font-size: 1.15rem;
-          font-weight: 600;
-          color: var(--text-dark);
-        }
-        .search-bar-premium input:focus {
-          outline: none;
         }
         .empty-state-card {
           padding: 50px;
@@ -270,16 +301,12 @@ const HomePage = () => {
         .location-auto-badge {
           display: inline-flex;
           align-items: center;
-          gap: 8px;
-          padding: 8px 16px;
-          border-radius: 100px;
-          font-size: 12px;
-          font-weight: 700;
-          color: var(--text-dark);
-          margin-bottom: 20px;
-          border: 1px solid var(--accent-gold-glow);
+          justify-content: center;
+          color: var(--text-muted);
+          font-weight: 800;
+          font-size: 13px;
         }
-        
+
         @media (max-width: 1024px) {
           .home-layout-wrapper {
             grid-template-columns: 1fr;
@@ -325,6 +352,17 @@ const HomePage = () => {
           .empty-state-card {
             padding: 32px 20px;
             margin-top: 28px;
+          }
+        }
+        @media (max-width: 640px) {
+          .home-news-shell {
+            width: calc(100vw - 24px);
+            margin-left: calc(50% - 50vw + 12px);
+            padding-top: 14px;
+          }
+          .home-feed-container {
+            padding-left: 0;
+            padding-right: 0;
           }
         }
       `}</style>

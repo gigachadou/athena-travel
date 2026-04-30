@@ -2,7 +2,7 @@ import { isSupabaseConfigured, supabase, supabaseConfigError } from '../lib/supa
 
 const FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=1200'
 const numberFormatter = new Intl.NumberFormat('en-US')
-const REQUEST_TIMEOUT_MS = 30000
+const REQUEST_TIMEOUT_MS = 8000
 const FALLBACK_PLACES = [
   {
     id: 'mock_1',
@@ -62,7 +62,75 @@ const FALLBACK_PLACES = [
     rating_count: 410,
   },
 ]
+
+const FALLBACK_HOME_NEWS = [
+  {
+    id: 'news_mock_1',
+    title: 'Sangardak sharsharasi',
+    subtitle: 'Yangi marshrut',
+    description: "Sariosiyo tog'lari bag'ridagi salqin manzara endi asosiy tavsiyalar ro'yxatida.",
+    location: 'Sariosiyo tumani',
+    image_url: 'https://www.advantour.com/img/uzbekistan/termez/sangardak-waterfall/sangardak-waterfall2.jpg',
+    cta_label: "Ko'rish",
+    place_id: null,
+    display_order: 1,
+  },
+  {
+    id: 'news_mock_2',
+    title: "Boysun tog'lari",
+    subtitle: 'Dam olish uchun ochildi',
+    description: "Piyoda sayr, toza havo va mahalliy yo'nalishlar uchun yangi tanlangan maskan.",
+    location: 'Boysun tumani',
+    image_url: 'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?w=1200',
+    cta_label: "Batafsil",
+    place_id: null,
+    display_order: 2,
+  },
+  {
+    id: 'news_mock_3',
+    title: 'Kampirtepa xarobalari',
+    subtitle: 'Tarixiy yangilik',
+    description: "Amudaryo bo'yidagi qadimiy shahar xarobalari sayohatchilar uchun qayta tavsiya qilindi.",
+    location: "Amudaryo bo'yi",
+    image_url: 'https://upload.wikimedia.org/wikipedia/commons/2/2d/Kampyrtepa.jpg',
+    cta_label: "Sayohat qilish",
+    place_id: null,
+    display_order: 3,
+  },
+]
 let hasLoggedFetchPlacesError = false
+
+const normalizeLookupText = (value = '') =>
+  String(value)
+    .trim()
+    .toLowerCase()
+    .replace(/['`’ʻ]/g, '')
+    .replace(/\s+/g, ' ')
+
+const scorePlaceForPreferences = (place, preferences = {}) => {
+  let score = Number(place.rating ?? 0) * 2 + Math.min(Number(place.ratingCount ?? 0), 50) / 25
+  if (preferences.types?.includes(place.type)) score += 12
+  if (preferences.regions?.includes(place.region)) score += 10
+  return score
+}
+
+const uniqueById = (items = []) => {
+  const seen = new Set()
+  return items.filter((item) => {
+    if (!item?.id || seen.has(item.id)) return false
+    seen.add(item.id)
+    return true
+  })
+}
+
+const softTimeout = (promise, fallback, timeoutMs = 1200) => {
+  let timeoutId
+  const timeoutPromise = new Promise((resolve) => {
+    timeoutId = setTimeout(() => resolve(fallback), timeoutMs)
+  })
+
+  return Promise.race([promise, timeoutPromise]).finally(() => clearTimeout(timeoutId))
+}
 
 // --- YORDAMCHI FUNKSIYALAR ---
 const getEmailRedirectTo = () => {
@@ -166,6 +234,210 @@ export const normalizePlace = (row) => ({
   rating: Number(row.average_rating ?? 0),
   ratingCount: Number(row.rating_count ?? 0),
 })
+
+export const normalizeHomeNews = (row) => ({
+  id: row.id,
+  title: row.title || 'Yangi maskan',
+  subtitle: row.subtitle || 'News',
+  description: row.description || '',
+  location: row.location || '',
+  image: row.image_url || FALLBACK_IMAGE,
+  ctaLabel: row.cta_label || "Ko'rish",
+  placeId: row.place_id || row.places?.id || null,
+  displayOrder: Number(row.display_order ?? 0),
+})
+
+const attachMatchedPlaceIdsToNews = async (news = []) => {
+  const missingPlace = news.filter((item) => !item.placeId)
+  if (!missingPlace.length || !isSupabaseConfigured || !supabase) return news
+
+  try {
+    const { data, error } = await withTimeout(
+      supabase.from('places').select('id,title,location')
+    )
+    if (error) throw error
+
+    const places = data || []
+    return news.map((item) => {
+      if (item.placeId) return item
+
+      const titleKey = normalizeLookupText(item.title)
+      const locationKey = normalizeLookupText(item.location)
+      const match = places.find((place) => {
+        const placeTitle = normalizeLookupText(place.title)
+        const placeLocation = normalizeLookupText(place.location)
+        return (
+          placeTitle === titleKey ||
+          titleKey.includes(placeTitle) ||
+          placeTitle.includes(titleKey) ||
+          (locationKey && placeLocation && (placeLocation.includes(locationKey) || locationKey.includes(placeLocation)))
+        )
+      })
+
+      return match ? { ...item, placeId: match.id } : item
+    })
+  } catch (err) {
+    console.error('attachMatchedPlaceIdsToNews error:', err)
+    return news
+  }
+}
+
+export const fetchHomeNews = async () => {
+  if (!isSupabaseConfigured || !supabase) {
+    return FALLBACK_HOME_NEWS.map(normalizeHomeNews)
+  }
+
+  try {
+    const { data, error } = await withTimeout(
+      supabase
+        .from('home_news')
+        .select('id,title,subtitle,description,location,image_url,cta_label,place_id,display_order,is_active,published_at')
+        .eq('is_active', true)
+        .order('display_order', { ascending: true })
+        .order('published_at', { ascending: false })
+    )
+    if (error) throw error
+
+    return attachMatchedPlaceIdsToNews((data || []).map(normalizeHomeNews))
+  } catch (err) {
+    console.error('fetchHomeNews error:', err)
+    return []
+  }
+}
+
+export const fetchUserPlacePreferences = async (userId) => {
+  if (!userId || !isSupabaseConfigured || !supabase) {
+    return { types: [], regions: [] }
+  }
+
+  try {
+    const [{ data: favorites }, { data: tickets }] = await Promise.all([
+      withTimeout(
+        supabase
+          .from('favorites')
+          .select('places(type,region)')
+          .eq('user_id', userId)
+      ),
+      withTimeout(
+        supabase
+          .from('tickets')
+          .select('place_id')
+          .eq('user_id', userId)
+      ),
+    ])
+
+    const placeIds = uniqueById((tickets || []).map((ticket) => ({ id: ticket.place_id }))).map((item) => item.id).filter(Boolean)
+    const ticketPlaces = placeIds.length
+      ? await withTimeout(supabase.from('places').select('id,type,region').in('id', placeIds))
+      : { data: [] }
+
+    const rows = [
+      ...(favorites || []).map((item) => Array.isArray(item.places) ? item.places[0] : item.places),
+      ...(ticketPlaces.data || []),
+    ].filter(Boolean)
+
+    const typeCounts = new Map()
+    const regionCounts = new Map()
+    rows.forEach((place) => {
+      if (place.type) typeCounts.set(place.type, (typeCounts.get(place.type) || 0) + 1)
+      if (place.region) regionCounts.set(place.region, (regionCounts.get(place.region) || 0) + 1)
+    })
+
+    const sortByCount = (entries) => entries.sort((a, b) => b[1] - a[1]).map(([value]) => value)
+    return {
+      types: sortByCount([...typeCounts.entries()]).slice(0, 3),
+      regions: sortByCount([...regionCounts.entries()]).slice(0, 3),
+    }
+  } catch (err) {
+    console.error('fetchUserPlacePreferences error:', err)
+    return { types: [], regions: [] }
+  }
+}
+
+export const fetchPersonalizedPlaces = async ({ userId, pageSize = 8, excludeIds = [] } = {}) => {
+  const excluded = new Set(excludeIds.filter(Boolean).map(String))
+
+  if (!isSupabaseConfigured || !supabase) {
+    const preferences = { types: [], regions: [] }
+    const rows = FALLBACK_PLACES
+      .map((row) => attachSource(normalizePlace(row), 'mock'))
+      .filter((place) => !excluded.has(String(place.id)))
+      .sort((left, right) => scorePlaceForPreferences(right, preferences) - scorePlaceForPreferences(left, preferences))
+
+    return {
+      places: rows.slice(0, pageSize),
+      hasMore: rows.length > pageSize,
+    }
+  }
+
+  const preferences = userId
+    ? await softTimeout(fetchUserPlacePreferences(userId), { types: [], regions: [] })
+    : { types: [], regions: [] }
+  const columns = 'id,title,location,description,image_url,price,price_per_person,type,region,amenities,best_season,difficulty,duration,lat,lon,average_rating,rating_count'
+  const hasPreferences = Boolean(preferences.types.length || preferences.regions.length)
+  const selected = []
+
+  const applyExclude = (query, ids) => {
+    if (!ids.length) return query
+    return query.not('id', 'in', `(${ids.join(',')})`)
+  }
+
+  try {
+    if (hasPreferences) {
+      const preferredParts = [
+        preferences.types.length ? `type.in.(${preferences.types.join(',')})` : '',
+        preferences.regions.length ? `region.in.(${preferences.regions.join(',')})` : '',
+      ].filter(Boolean)
+
+      const preferredQuery = applyExclude(
+        supabase
+          .from('places')
+          .select(columns)
+          .or(preferredParts.join(','))
+          .order('average_rating', { ascending: false })
+          .order('created_at', { ascending: false })
+          .range(0, pageSize * 3 - 1),
+        [...excluded]
+      )
+
+      const { data, error } = await withTimeout(preferredQuery)
+      if (error) throw error
+
+      selected.push(
+        ...(data || [])
+          .map((row) => attachSource(normalizePlace(row), 'supabase'))
+          .sort((left, right) => scorePlaceForPreferences(right, preferences) - scorePlaceForPreferences(left, preferences))
+      )
+    }
+
+    const selectedIds = new Set([...excluded, ...selected.map((place) => String(place.id))])
+    if (selected.length < pageSize) {
+      const remaining = pageSize - selected.length
+      const generalQuery = applyExclude(
+        supabase
+          .from('places')
+          .select(columns)
+          .order('average_rating', { ascending: false })
+          .order('created_at', { ascending: false })
+          .range(0, remaining),
+        [...selectedIds]
+      )
+
+      const { data, error } = await withTimeout(generalQuery)
+      if (error) throw error
+      selected.push(...(data || []).map((row) => attachSource(normalizePlace(row), 'supabase')))
+    }
+
+    const page = uniqueById(selected).slice(0, pageSize)
+    return {
+      places: page,
+      hasMore: page.length === pageSize,
+    }
+  } catch (err) {
+    console.error('fetchPersonalizedPlaces error:', err)
+    return { places: [], hasMore: false }
+  }
+}
 
 export const fetchPlacesForAI = async (locale = 'uz') => {
   const client = requireSupabase()
@@ -377,7 +649,10 @@ export const getCurrentSession = async () => {
 
 export const fetchProfileFromDB = async (userId) => {
   if (!userId || !isSupabaseConfigured || !supabase) return null
-  const { data, error } = await supabase.from('profiles').select('*').eq('id', userId).maybeSingle()
+  const { data, error } = await withTimeout(
+    supabase.from('profiles').select('*').eq('id', userId).maybeSingle(),
+    "Profil ma'lumotlari juda sekin yuklandi."
+  )
   if (error) {
     if (error.code !== 'PGRST116') { // Ignore 'JSON object requested, but no rows returned'
       console.warn('DB Profile fetch note:', error.message || error);
@@ -391,8 +666,11 @@ export const fetchProfile = async (userId) => {
   if (!userId || !isSupabaseConfigured || !supabase) return null
   try {
     const client = requireSupabase()
-    const dbProfile = await withRetry(() => fetchProfileFromDB(userId))
-    const { data: { user }, error: authError } = await withRetry(() => client.auth.getUser())
+    const [dbProfile, authResult] = await Promise.all([
+      fetchProfileFromDB(userId),
+      withTimeout(client.auth.getUser(), "Auth user ma'lumotlari juda sekin yuklandi."),
+    ])
+    const { data: { user }, error: authError } = authResult
 
     if (authError || !user) return dbProfile
 

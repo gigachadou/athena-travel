@@ -123,6 +123,12 @@ const TicketPage = () => {
 
   const handleSubmit = async (e) => {
     if (e) e.preventDefault()
+    if (!ticketId && displayPlace?.type !== 'hotels') {
+      setErrorMessage('Bron qilish faqat mehmonxonalar uchun mavjud.')
+      setStatus('error')
+      return
+    }
+
     if (!isAuthenticated || !user?.id || !displayPlace?.id) {
       setErrorMessage('Tizimda xatolik yoki ma\'lumotlar yetarli emas. Iltimos, qaytadan urinib ko\'ring.')
       setStatus('error')
@@ -194,6 +200,21 @@ const TicketPage = () => {
             <Link to="/login" className="btn-primary">Kirish</Link>
             <Link to="/register" className="btn-accent">Ro'yxatdan o'tish</Link>
           </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (!ticketId && displayPlace && displayPlace.type !== 'hotels') {
+    return (
+      <div className="ticket-page">
+        <div className="empty-state glass-full animate-up">
+          <AlertCircle size={64} color="var(--accent-gold)" />
+          <h2>Bron mavjud emas</h2>
+          <p>Bu bo'lim faqat mehmonxonalar uchun ishlaydi. Boshqa joylar haqida ma'lumotni sahifa ichidan ko'rishingiz mumkin.</p>
+          <button className="btn-primary" onClick={() => navigate(`/place/${displayPlace.id}`)}>
+            Joy sahifasiga qaytish
+          </button>
         </div>
       </div>
     )

@@ -46,14 +46,29 @@ export const AuthProvider = ({ children }) => {
       return
     }
 
+    setUser(buildAuthUser({ user: authUser, profile: null }))
+    setProfile(null)
+
+    fetchProfile(authUser.id)
+      .then((nextProfile) => {
+        setProfile(nextProfile)
+        setUser(buildAuthUser({ user: authUser, profile: nextProfile }))
+      })
+      .catch((err) => {
+        console.error('Error hydrating user:', err)
+      })
+  }
+
+  const clearAuthTimeout = () => {}
+
+  const updateAuthState = async (nextSession) => {
+    setSession(nextSession ?? null)
     try {
-      const nextProfile = await fetchProfile(authUser.id)
-      setProfile(nextProfile)
-      setUser(buildAuthUser({ user: authUser, profile: nextProfile }))
-    } catch (err) {
-      console.error('Error hydrating user:', err)
-      setProfile(null)
-      setUser(buildAuthUser({ user: authUser, profile: null }))
+      await hydrateUser(nextSession?.user ?? null)
+      setAuthError('')
+    } catch (error) {
+      console.error('Failed to update auth state:', error)
+      setAuthError("Autentifikatsiya holatini yangilab bo'lmadi.")
     }
   }
 
