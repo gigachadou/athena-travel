@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { Filter, X } from 'lucide-react'
 import PostCard from '../components/PostCard'
 import '../styles/HomePage.css'
 import SidebarFilter from '../components/SidebarFilter'
@@ -11,6 +12,10 @@ import { createDefaultFilters, deriveFilterOptions, filterPlaces } from '../util
 
 const PLACES_PAGE_SIZE = 8
 
+const hasActiveFilters = (filters, defaultFilters) => {
+  return JSON.stringify(filters) !== JSON.stringify(defaultFilters)
+}
+
 const HomePage = () => {
   const { t } = useTranslation()
   const { user } = useAuth()
@@ -21,6 +26,7 @@ const HomePage = () => {
   const [hasMore, setHasMore] = useState(true)
   const [error, setError] = useState('')
   const [filters, setFilters] = useState(createDefaultFilters())
+  const [isFilterOpen, setIsFilterOpen] = useState(false)
   const loadMoreRef = useRef(null)
   const maxPriceRef = useRef(0)
 
